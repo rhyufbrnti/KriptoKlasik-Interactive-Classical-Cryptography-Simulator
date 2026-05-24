@@ -1,0 +1,569 @@
+{% extends 'base.html' %}
+
+{% block title %}Hill Cipher{% endblock %}
+
+{% block content %}
+
+<!-- ── Page Header ── -->
+<div class="page-header mb-4">
+    <div class="page-header-left">
+        <div class="page-breadcrumb">
+            <a href="{{ url_for('index') }}" class="breadcrumb-link">Dashboard</a>
+            <i class="fa-solid fa-chevron-right breadcrumb-sep"></i>
+            <span class="breadcrumb-current">Hill Cipher</span>
+        </div>
+        <h1 class="page-title title-hill">
+            <i class="fa-solid fa-table-cells me-3"></i>Hill Cipher
+        </h1>
+        <p class="page-desc">
+            Menggunakan aljabar linier dan perkalian matriks modulo 26. Teks diproses dalam bentuk blok vektor yang dikalikan dengan matriks kunci.
+        </p>
+    </div>
+    <!-- Formula badge -->
+    <div class="formula-badge badge-hill-color d-none d-md-flex">
+        <div class="formula-label">Rumus Enkripsi</div>
+        <div class="formula-main"><code>C = (K × P) mod 26</code></div>
+        <div class="formula-label mt-1">Rumus Dekripsi</div>
+        <div class="formula-main"><code>P = (K⁻¹ × C) mod 26</code></div>
+    </div>
+</div>
+
+<!-- Menampilkan Error jika Matriks tidak valid -->
+{% if error_message %}
+<div class="alert-neon-danger mb-4">
+    <i class="fa-solid fa-triangle-exclamation me-2"></i> <strong>Kesalahan Matriks:</strong> {{ error_message }}
+</div>
+{% endif %}
+
+<!-- ── Main Grid ── -->
+<div class="row g-4">
+
+    <!-- ════ LEFT: Config Panel ════ -->
+    <div class="col-lg-4">
+        <div class="config-panel panel-hill">
+
+            <!-- Header -->
+            <div class="config-panel-header header-hill">
+                <i class="fa-solid fa-sliders"></i>
+                <span>Konfigurasi</span>
+                <div class="header-dot dot-hill ms-auto"></div>
+            </div>
+
+            <!-- Body / Form -->
+            <div class="config-panel-body">
+                <form method="POST" action="{{ url_for('hill.index') }}">
+
+                    <!-- Text Input -->
+                    <div class="field-group mb-3">
+                        <label class="field-label">
+                            <i class="fa-solid fa-align-left me-2"></i>Teks Input
+                        </label>
+                        <textarea class="game-input"
+                                  name="text"
+                                  rows="4"
+                                  placeholder="Masukkan pesan di sini..." required>{{ text_input }}</textarea>
+                        <div class="field-hint text-warning">Karakter non-alfabet akan dihapus otomatis.</div>
+                    </div>
+
+                    <!-- Key Input & Matrix Size -->
+                    <div class="row g-2 mb-3">
+                        <div class="col-8">
+                            <div class="field-group">
+                                <label class="field-label">Kata Kunci (Key)</label>
+                                <input type="text" class="game-input text-uppercase" name="key" value="{{ key_input }}" pattern="[A-Za-z]+" required>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="field-group">
+                                <label class="field-label">Matriks</label>
+                                <select class="game-input" name="n_size" style="padding: .55rem;">
+                                    <option value="2" {% if n_size == 2 %}selected{% endif %}>2x2</option>
+                                    <option value="3" {% if n_size == 3 %}selected{% endif %}>3x3</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Mode -->
+                    <div class="field-group mb-4">
+                        <label class="field-label">
+                            <i class="fa-solid fa-code-branch me-2"></i>Mode Operasi
+                        </label>
+                        <div class="mode-toggle">
+                            <label class="mode-option {% if mode == 'encrypt' %}mode-active-hill{% endif %}">
+                                <input type="radio" name="mode" value="encrypt"
+                                       {% if mode == 'encrypt' %}checked{% endif %} hidden>
+                                <i class="fa-solid fa-lock me-1"></i> Enkripsi
+                            </label>
+                            <label class="mode-option {% if mode == 'decrypt' %}mode-active-hill{% endif %}">
+                                <input type="radio" name="mode" value="decrypt"
+                                       {% if mode == 'decrypt' %}checked{% endif %} hidden>
+                                <i class="fa-solid fa-lock-open me-1"></i> Dekripsi
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Submit -->
+                    <button type="submit" class="btn-run btn-run-hill">
+                        <i class="fa-solid fa-bolt me-2"></i>
+                        Proses Hill
+                        <span class="btn-run-arrow">→</span>
+                    </button>
+
+                </form>
+            </div>
+        </div><!-- /config-panel -->
+
+        <!-- Info box below form -->
+        <div class="info-aside mt-3">
+            <div class="info-aside-title">
+                <i class="fa-solid fa-circle-info me-2" style="color:#ffb700;"></i>Cara Kerja
+            </div>
+            <p>Teks akan dipecah menjadi blok huruf sepanjang ukuran matriks. Jika panjang teks tidak pas, huruf <strong>X</strong> akan ditambahkan (padding) di akhir teks.</p>
+            <p class="mb-0">Matriks kunci wajib memiliki <em>determinan</em> yang saling prima dengan 26 agar bisa didekripsi.</p>
+        </div>
+    </div><!-- /col-lg-4 -->
+
+    <!-- ════ RIGHT: Result + Steps ════ -->
+    <div class="col-lg-8">
+
+        {% if result_text and not error_message %}
+
+        <!-- ── Result Box ── -->
+        <div class="result-panel panel-hill mb-4">
+            <div class="result-panel-header header-hill-result">
+                <div class="result-status-dot"></div>
+                <span>Hasil {{ 'Enkripsi' if mode == 'encrypt' else 'Dekripsi' }}</span>
+                <div class="result-meta ms-auto">
+                    <span class="meta-chip">Size: {{ n_size }}x{{ n_size }}</span>
+                    <span class="meta-chip chip-mode">{{ 'ENCRYPT' if mode == 'encrypt' else 'DECRYPT' }}</span>
+                </div>
+            </div>
+
+            <!-- Input row -->
+            <div class="result-row">
+                <div class="result-row-label">INPUT</div>
+                <div class="result-value value-muted">{{ text_input }}</div>
+            </div>
+
+            <!-- Output row -->
+            <div class="result-row result-row-output">
+                <div class="result-row-label label-hill">OUTPUT</div>
+                <div class="result-value value-hill">{{ result_text }}</div>
+            </div>
+
+            <!-- Copy button -->
+            <div class="result-actions">
+                <button class="btn-copy" onclick="copyResult('{{ result_text }}')">
+                    <i class="fa-regular fa-copy me-1"></i> Salin Hasil
+                </button>
+                <span class="copy-feedback" id="copy-feedback"></span>
+            </div>
+        </div>
+
+        <!-- ── Steps Table ── -->
+        <div class="steps-panel">
+
+            <div class="steps-panel-header">
+                <i class="fa-solid fa-list-ol me-2" style="color:#ffb700;"></i>
+                <span>Visualisasi Perkalian Matriks</span>
+                <span class="steps-count ms-auto">{{ steps|length }} Blok</span>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table-steps">
+                    <thead>
+                        <tr>
+                            <th>Blok In</th>
+                            <th>Vektor [P]</th>
+                            <th>Matriks [K]</th>
+                            <th>Vektor [C]</th>
+                            <th>Blok Out</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for step in steps %}
+                        <tr>
+                            <td><span class="char-block char-input">{{ step.block_in }}</span></td>
+                            
+                            <!-- Vektor Input -->
+                            <td>
+                                <table class="table-matrix">
+                                    {% for val in step.vector_in %}
+                                    <tr><td>{{ val[0] }}</td></tr>
+                                    {% endfor %}
+                                </table>
+                            </td>
+
+                            <!-- Matriks Kunci -->
+                            <td>
+                                <table class="table-matrix matrix-key">
+                                    {% for row in step.matrix %}
+                                    <tr>
+                                        {% for val in row %}
+                                        <td>{{ val }}</td>
+                                        {% endfor %}
+                                    </tr>
+                                    {% endfor %}
+                                </table>
+                            </td>
+
+                            <!-- Vektor Output -->
+                            <td>
+                                <table class="table-matrix matrix-out">
+                                    {% for val in step.vector_out %}
+                                    <tr><td>{{ val[0] }}</td></tr>
+                                    {% endfor %}
+                                </table>
+                            </td>
+
+                            <td>
+                                <span class="char-block char-hill">{{ step.block_out }}</span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div><!-- /steps-panel -->
+
+        {% elif not error_message %}
+
+        <!-- ── Empty State ── -->
+        <div class="empty-state">
+            <div class="empty-icon"><i class="fa-solid fa-table-cells"></i></div>
+            <div class="empty-title">Siap Digunakan</div>
+            <div class="empty-desc">
+                Isi teks dan kata kunci pembentuk matriks di panel kiri,<br>
+                lalu klik <strong>Proses Hill</strong> untuk melihat simulasi.
+            </div>
+            <div class="empty-example">
+                <span class="ex-label">Info:</span>
+                <span class="ex-plain">Spasi dan angka akan diabaikan</span>
+            </div>
+        </div>
+
+        {% endif %}
+
+    </div><!-- /col-lg-8 -->
+</div><!-- /row -->
+
+{% endblock %}
+
+{% block extra_js %}
+<style>
+/* ════════════════════════════════════════
+   HILL PAGE — SCOPED STYLES (NEON AMBER)
+════════════════════════════════════════ */
+
+/* ── Page Header ── */
+.page-header {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    gap: 1.5rem; flex-wrap: wrap;
+}
+.page-breadcrumb {
+    display: flex; align-items: center; gap: 6px;
+    font-family: 'Rajdhani', sans-serif; font-size: .78rem; letter-spacing: 1px;
+    margin-bottom: .5rem;
+}
+.breadcrumb-link { color: #44447a; text-decoration: none; }
+.breadcrumb-link:hover { color: #ffb700; }
+.breadcrumb-sep { color: #33335a; font-size: .6rem; }
+.breadcrumb-current { color: #ffb700; }
+
+.page-title {
+    font-family: 'Orbitron', sans-serif; font-size: clamp(1.2rem,3vw,1.7rem);
+    font-weight: 900; letter-spacing: 2px; margin-bottom: .4rem;
+}
+.title-hill { color: #ffb700; text-shadow: 0 0 18px rgba(255,183,0,.45); }
+
+.page-desc {
+    font-family: 'Rajdhani', sans-serif; color: #66667a; font-size: .92rem; max-width: 480px;
+}
+
+/* Formula badge */
+.formula-badge {
+    display: flex; flex-direction: column;
+    background: rgba(255,183,0,.05); border: 1px solid rgba(255,183,0,.2);
+    border-radius: 12px; padding: .9rem 1.25rem; gap: 2px; min-width: 220px;
+}
+.badge-hill-color { border-color: rgba(255,183,0,.2); }
+.formula-label {
+    font-family: 'Orbitron', sans-serif; font-size: .6rem; letter-spacing: 2px;
+    color: #44447a; text-transform: uppercase;
+}
+.formula-main code {
+    font-family: 'Share Tech Mono', monospace; font-size: .88rem;
+    color: #ffb700; background: none; padding: 0;
+}
+
+/* Neon Alert Box */
+.alert-neon-danger {
+    background: rgba(255,51,102,0.08);
+    border: 1px solid rgba(255,51,102,0.25);
+    border-left: 4px solid #ff3366;
+    color: #ffb3c6;
+    padding: 1rem 1.25rem;
+    border-radius: 8px;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 1.05rem;
+    box-shadow: 0 4px 15px rgba(255,51,102,0.1);
+}
+
+/* ── Config Panel ── */
+.config-panel {
+    background: #0b0b1e; border-radius: 12px;
+    border: 1px solid rgba(255,255,255,.08); overflow: hidden;
+}
+.panel-hill { border-top: 2px solid #ffb700; }
+
+.config-panel-header {
+    display: flex; align-items: center; gap: 8px; padding: .75rem 1.2rem;
+    font-family: 'Orbitron', sans-serif; font-size: .7rem; font-weight: 700;
+    letter-spacing: 2.5px; text-transform: uppercase;
+}
+.header-hill { background: rgba(255,183,0,.07); color: #ffb700; border-bottom: 1px solid rgba(255,183,0,.15); }
+
+.header-dot {
+    width: 8px; height: 8px; border-radius: 50%; animation: pulse-dot 2s infinite;
+}
+.dot-hill { background: #ffb700; box-shadow: 0 0 6px #ffb700; }
+@keyframes pulse-dot {
+    0%,100% { opacity: 1; transform: scale(1); }
+    50%      { opacity: .4; transform: scale(.7); }
+}
+
+.config-panel-body { padding: 1.25rem; }
+
+/* Form fields */
+.field-label {
+    font-family: 'Rajdhani', sans-serif; font-size: .78rem; font-weight: 700;
+    letter-spacing: 2px; text-transform: uppercase; color: #55557a;
+    display: block; margin-bottom: .4rem;
+}
+.game-input {
+    width: 100%; background: #06060f; border: 1px solid rgba(255,255,255,.1);
+    border-radius: 8px; color: #e0e0ff; font-family: 'Rajdhani', sans-serif;
+    font-size: .95rem; padding: .55rem .85rem; resize: vertical;
+    transition: border-color .2s, box-shadow .2s; outline: none;
+}
+.game-input:focus {
+    border-color: #ffb700; box-shadow: 0 0 0 3px rgba(255,183,0,.12);
+}
+.game-input::placeholder { color: #333355; }
+.field-hint {
+    font-family: 'Rajdhani', sans-serif; font-size: .75rem; color: #33335a; margin-top: .3rem;
+}
+
+/* Mode toggle */
+.mode-toggle { display: flex; gap: 8px; }
+.mode-option {
+    flex: 1; display: flex; align-items: center; justify-content: center;
+    font-family: 'Rajdhani', sans-serif; font-size: .85rem; font-weight: 700;
+    letter-spacing: 1px; padding: .55rem; border-radius: 8px;
+    border: 1px solid rgba(255,255,255,.1); background: #06060f; color: #55557a;
+    cursor: pointer; transition: all .2s;
+}
+.mode-option:hover { border-color: rgba(255,183,0,.3); color: #ffb700; }
+.mode-active-hill { border-color: #ffb700 !important; color: #ffb700 !important; background: rgba(255,183,0,.1) !important; }
+
+/* Run button */
+.btn-run {
+    width: 100%; display: flex; align-items: center; justify-content: center; gap: 4px;
+    font-family: 'Orbitron', sans-serif; font-size: .75rem; font-weight: 700;
+    letter-spacing: 2.5px; text-transform: uppercase; padding: .75rem;
+    border-radius: 8px; border: none; cursor: pointer; transition: all .25s;
+    position: relative; overflow: hidden;
+}
+.btn-run-arrow { margin-left: auto; transition: transform .25s; }
+.btn-run:hover .btn-run-arrow { transform: translateX(4px); }
+.btn-run-hill {
+    background: rgba(255,183,0,.12); color: #ffb700; border: 1px solid rgba(255,183,0,.3);
+}
+.btn-run-hill:hover {
+    background: rgba(255,183,0,.22); box-shadow: 0 0 20px rgba(255,183,0,.2);
+}
+
+/* Info aside */
+.info-aside {
+    background: #0b0b1e; border: 1px solid rgba(255,255,255,.07);
+    border-left: 3px solid #ffb700; border-radius: 10px; padding: 1rem 1.15rem;
+}
+.info-aside-title {
+    font-family: 'Orbitron', sans-serif; font-size: .68rem; letter-spacing: 2px;
+    text-transform: uppercase; color: #aaaacc; margin-bottom: .6rem;
+}
+.info-aside p {
+    font-family: 'Rajdhani', sans-serif; font-size: .88rem; color: #66667a;
+    line-height: 1.6; margin-bottom: .4rem;
+}
+
+/* ── Result Panel ── */
+.result-panel {
+    background: #0b0b1e; border-radius: 12px; border: 1px solid rgba(255,255,255,.08); overflow: hidden;
+}
+.panel-hill { border-top: 2px solid #ffb700; }
+
+.result-panel-header {
+    display: flex; align-items: center; gap: 8px; padding: .7rem 1.2rem;
+    font-family: 'Orbitron', sans-serif; font-size: .7rem; font-weight: 700;
+    letter-spacing: 2px; text-transform: uppercase;
+}
+.header-hill-result { background: rgba(255,183,0,.08); color: #ffb700; border-bottom: 1px solid rgba(255,183,0,.12); }
+
+.result-status-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: #ffb700; box-shadow: 0 0 8px #ffb700; animation: pulse-dot 1.5s infinite;
+}
+
+/* Meta chips */
+.meta-chip {
+    font-family: 'Share Tech Mono', monospace; font-size: .68rem;
+    background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.1);
+    border-radius: 4px; padding: 2px 8px; color: #8888aa; margin-left: 6px;
+}
+.chip-mode { color: #ffb700; border-color: rgba(255,183,0,.25); background: rgba(255,183,0,.08); }
+
+/* Result rows */
+.result-row {
+    display: flex; align-items: flex-start; gap: 12px; padding: .85rem 1.2rem;
+    border-bottom: 1px solid rgba(255,255,255,.05);
+}
+.result-row-output { background: rgba(255,183,0,.03); }
+
+.result-row-label {
+    font-family: 'Orbitron', sans-serif; font-size: .6rem; font-weight: 700;
+    letter-spacing: 2px; text-transform: uppercase; color: #33335a; min-width: 52px; padding-top: 3px;
+}
+.label-hill { color: #ffb700; }
+
+.result-value {
+    font-family: 'Share Tech Mono', monospace; font-size: 1.05rem;
+    word-break: break-all; line-height: 1.7; letter-spacing: 2px;
+}
+.value-muted  { color: #44445a; }
+.value-hill { color: #ffb700; text-shadow: 0 0 8px rgba(255,183,0,.35); }
+
+.result-actions { padding: .6rem 1.2rem; display: flex; align-items: center; gap: 10px; }
+.btn-copy {
+    font-family: 'Rajdhani', sans-serif; font-size: .8rem; font-weight: 700;
+    letter-spacing: 1px; background: rgba(255,183,0,.08); border: 1px solid rgba(255,183,0,.25);
+    border-radius: 6px; color: #ffb700; padding: 4px 14px; cursor: pointer; transition: all .2s;
+}
+.btn-copy:hover { background: rgba(255,183,0,.18); }
+.copy-feedback { font-family: 'Rajdhani', sans-serif; font-size: .8rem; color: #39ff14; }
+
+/* ── Steps Panel ── */
+.steps-panel {
+    background: #0b0b1e; border-radius: 12px; border: 1px solid rgba(255,255,255,.08); overflow: hidden;
+}
+.steps-panel-header {
+    display: flex; align-items: center; padding: .75rem 1.2rem;
+    font-family: 'Orbitron', sans-serif; font-size: .7rem; font-weight: 700;
+    letter-spacing: 2px; text-transform: uppercase; color: #8888bb;
+    background: rgba(255,255,255,.03); border-bottom: 1px solid rgba(255,255,255,.07);
+}
+.steps-count { font-family: 'Share Tech Mono', monospace; font-size: .7rem; color: #44447a; }
+
+/* Table Master */
+.table-steps { width: 100%; border-collapse: collapse; font-family: 'Rajdhani', sans-serif; font-size: .9rem; }
+.table-steps thead th {
+    padding: .6rem 1rem; font-family: 'Orbitron', sans-serif; font-size: .62rem; font-weight: 700;
+    letter-spacing: 2px; text-transform: uppercase; color: #44447a;
+    background: rgba(255,255,255,.03); border-bottom: 1px solid rgba(255,255,255,.08);
+    text-align: center; white-space: nowrap;
+}
+.table-steps tbody tr { border-bottom: 1px solid rgba(255,255,255,.04); transition: background .15s; }
+.table-steps tbody tr:hover { background: rgba(255,255,255,.03); }
+.table-steps td { padding: .8rem 1rem; text-align: center; vertical-align: middle; color: #aaaacc; }
+
+/* Block boxes */
+.char-block {
+    display: inline-flex; align-items: center; justify-content: center;
+    height: 32px; padding: 0 12px; border-radius: 6px;
+    font-family: 'Share Tech Mono', monospace; font-size: 1rem; font-weight: 700;
+    letter-spacing: 2px;
+}
+.char-input  { background: rgba(255,255,255,.07); color: #ccccee; border: 1px solid rgba(255,255,255,.12); }
+.char-hill { background: rgba(255,183,0,.1); color: #ffb700; border: 1px solid rgba(255,183,0,.3); }
+
+/* Sci-Fi Matrix Visualization */
+.table-matrix {
+    border-collapse: collapse;
+    margin: 0 auto;
+    background: rgba(0,0,0,0.2);
+}
+.table-matrix td {
+    border: 1px solid rgba(255,255,255,0.1);
+    padding: 6px 12px;
+    color: #ccccee;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.9rem;
+    text-align: center;
+}
+.matrix-key td {
+    border: 1px solid rgba(255,183,0,0.3);
+    color: #ffb700;
+    font-weight: bold;
+    background: rgba(255,183,0,0.05);
+}
+.matrix-out td {
+    color: #ff3366; /* Sedikit aksen merah untuk hasil perhitungan angka */
+    font-weight: bold;
+}
+
+/* ── Empty State ── */
+.empty-state {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    min-height: 340px; background: #0b0b1e; border: 1px dashed rgba(255,183,0,.2);
+    border-radius: 12px; padding: 2.5rem; text-align: center;
+}
+.empty-icon { font-size: 2.5rem; color: rgba(255,183,0,.2); margin-bottom: 1rem; }
+.empty-title {
+    font-family: 'Orbitron', sans-serif; font-size: .9rem; letter-spacing: 2px;
+    color: #33335a; margin-bottom: .5rem; text-transform: uppercase;
+}
+.empty-desc {
+    font-family: 'Rajdhani', sans-serif; color: #44446a; font-size: .9rem;
+    line-height: 1.65; margin-bottom: 1.5rem;
+}
+.empty-example {
+    display: flex; align-items: center; flex-wrap: wrap; justify-content: center; gap: 4px;
+    font-family: 'Share Tech Mono', monospace; font-size: .85rem;
+    background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.08);
+    border-radius: 8px; padding: .6rem 1.2rem;
+}
+.ex-label { color: #ffb700; font-size: .75rem; letter-spacing: 1px; }
+.ex-plain { color: #ccccee; }
+
+/* Light mode overrides */
+[data-bs-theme="light"] .config-panel,
+[data-bs-theme="light"] .result-panel,
+[data-bs-theme="light"] .steps-panel,
+[data-bs-theme="light"] .info-aside,
+[data-bs-theme="light"] .empty-state { background: #ffffff; border-color: rgba(0,0,0,.08); }
+[data-bs-theme="light"] .game-input  { background: #fffaee; color: #2b220d; border-color: rgba(0,0,0,.12); }
+[data-bs-theme="light"] .page-desc { color: #555577; }
+[data-bs-theme="light"] .table-matrix { background: transparent; }
+[data-bs-theme="light"] .table-matrix td { border-color: rgba(0,0,0,0.1); color: #333; }
+[data-bs-theme="light"] .matrix-key td { border-color: rgba(255,183,0,0.5); color: #b38000; background: #fffdf5; }
+</style>
+
+<script>
+document.querySelectorAll('.mode-option input[type=radio]').forEach(radio => {
+    radio.addEventListener('change', () => {
+        document.querySelectorAll('.mode-option').forEach(el => {
+            el.classList.remove('mode-active-hill');
+        });
+        if (radio.checked) radio.closest('.mode-option').classList.add('mode-active-hill');
+    });
+});
+
+function copyResult(text) {
+    navigator.clipboard.writeText(text).then(() => {
+        const fb = document.getElementById('copy-feedback');
+        if (fb) { fb.textContent = '✓ Tersalin!'; setTimeout(() => fb.textContent = '', 2000); }
+    });
+}
+</script>
+{% endblock %}

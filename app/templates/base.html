@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="id" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}KriptoKlasik{% endblock %} — Simulasi Kriptografi</title>
+
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom CSS (style.css kita) -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+    <style>
+        /* ── Layout shell ── */
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        /* ── Animated grid background ── */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(0,245,255,.04) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0,245,255,.04) 1px, transparent 1px);
+            background-size: 48px 48px;
+            pointer-events: none;
+            z-index: 0;
+        }
+        /* Radial vignette on top of grid */
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(ellipse 80% 60% at 50% 0%,
+                        rgba(0,245,255,.05) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* All real content must sit above the pseudo elements */
+        .navbar, .layout-shell, footer { position: relative; z-index: 1; }
+
+        /* ── Sidebar + content wrapper ── */
+        .layout-shell {
+            display: flex;
+            flex: 1;
+        }
+
+        /* ── Sidebar ── */
+        .sidebar {
+            width: 220px;
+            min-height: 100%;
+            background: #05050f;
+            border-right: 1px solid rgba(0,245,255,.12);
+            padding: 1.5rem 0 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.15rem;
+            flex-shrink: 0;
+            transition: width .3s ease;
+        }
+
+        .sidebar-label {
+            font-family: 'Orbitron', sans-serif;
+            font-size: .6rem;
+            letter-spacing: 3px;
+            color: #44447a;
+            text-transform: uppercase;
+            padding: .5rem 1.4rem .25rem;
+            margin-top: .75rem;
+        }
+
+        .sidebar-link {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: .55rem 1.4rem;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: .95rem;
+            font-weight: 600;
+            letter-spacing: .5px;
+            color: #7777aa;
+            text-decoration: none;
+            border-left: 3px solid transparent;
+            transition: all .2s ease;
+            white-space: nowrap;
+        }
+        .sidebar-link i { width: 18px; text-align: center; font-size: .95rem; }
+        .sidebar-link:hover, .sidebar-link.active {
+            color: #fff;
+            background: rgba(255,255,255,.04);
+        }
+
+        /* Per-cipher accent colours */
+        .sidebar-link.link-caesar:hover,  .sidebar-link.link-caesar.active  { border-left-color: #00f5ff; color: #00f5ff; background: rgba(0,245,255,.07); }
+        .sidebar-link.link-vigenere:hover, .sidebar-link.link-vigenere.active { border-left-color: #39ff14; color: #39ff14; background: rgba(57,255,20,.07); }
+        .sidebar-link.link-affine:hover,  .sidebar-link.link-affine.active  { border-left-color: #ff2d9b; color: #ff2d9b; background: rgba(255,45,155,.07); }
+        .sidebar-link.link-hill:hover,    .sidebar-link.link-hill.active    { border-left-color: #ffe000; color: #ffe000; background: rgba(255,224,0,.07); }
+        .sidebar-link.link-playfair:hover,.sidebar-link.link-playfair.active{ border-left-color: #bf5fff; color: #bf5fff; background: rgba(191,95,255,.07); }
+        .sidebar-link.link-history:hover, .sidebar-link.link-history.active { border-left-color: #ff6b35; color: #ff6b35; background: rgba(255,107,53,.07); }
+
+        /* ── Main content area ── */
+        .main-content {
+            flex: 1;
+            padding: 2rem 2.25rem 2.5rem;
+            overflow-x: hidden;
+            min-width: 0; /* prevent flex blowout */
+        }
+
+        /* ── Top navbar ── */
+        .navbar {
+            background: #05050f !important;
+            border-bottom: 1px solid rgba(0,245,255,.18);
+            box-shadow: 0 0 24px rgba(0,245,255,.12);
+            padding: .55rem 1.5rem;
+        }
+        .navbar-brand {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1rem !important;
+            font-weight: 900;
+            letter-spacing: 3px;
+            color: #00f5ff !important;
+            text-shadow: 0 0 14px #00f5ff;
+            text-transform: uppercase;
+        }
+        .navbar-brand i { color: #ff2d9b; text-shadow: 0 0 10px #ff2d9b; }
+
+        /* Theme toggle */
+        #theme-toggle {
+            font-family: 'Rajdhani', sans-serif;
+            font-weight: 600;
+            font-size: .78rem;
+            letter-spacing: 1.5px;
+            border: 1px solid rgba(0,245,255,.4) !important;
+            color: #00f5ff !important;
+            border-radius: 20px;
+            padding: 4px 14px;
+            background: transparent;
+            text-transform: uppercase;
+            transition: all .25s;
+        }
+        #theme-toggle:hover {
+            background: #00f5ff !important;
+            color: #000 !important;
+            box-shadow: 0 0 12px #00f5ff;
+        }
+
+        /* Mobile hamburger replaces sidebar on small screens */
+        @media (max-width: 991.98px) {
+            .sidebar { display: none; }
+            .main-content { padding: 1.5rem 1rem 2rem; }
+        }
+
+        /* ── Footer ── */
+        footer {
+            background: #05050f !important;
+            border-top: 1px solid rgba(0,245,255,.1);
+            font-family: 'Rajdhani', sans-serif;
+            font-size: .82rem;
+            letter-spacing: .5px;
+            color: #44447a !important;
+            padding: .9rem 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: .5rem;
+        }
+        footer small { color: #44447a !important; }
+        .footer-dot {
+            display: inline-block;
+            width: 6px; height: 6px;
+            border-radius: 50%;
+            background: #00f5ff;
+            box-shadow: 0 0 6px #00f5ff;
+            margin-right: 8px;
+            animation: blink 2s ease-in-out infinite;
+        }
+        @keyframes blink {
+            0%,100% { opacity: 1; }
+            50%      { opacity: .2; }
+        }
+
+        /* ── Light mode overrides ── */
+        [data-bs-theme="light"] body::before {
+            background-image:
+                linear-gradient(rgba(0,100,255,.04) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0,100,255,.04) 1px, transparent 1px);
+        }
+        [data-bs-theme="light"] .sidebar,
+        [data-bs-theme="light"] .navbar,
+        [data-bs-theme="light"] footer { background: #0d0d2b !important; }
+
+        [data-bs-theme="light"] .sidebar-link { color: #9999cc; }
+
+        /* Mobile navbar fallback links */
+        .mobile-nav-links .nav-link {
+            font-family: 'Rajdhani', sans-serif;
+            font-weight: 600;
+            font-size: .88rem;
+            letter-spacing: .5px;
+            color: #7777aa !important;
+            padding: .35rem .75rem;
+            border-radius: 6px;
+            transition: all .2s;
+        }
+        .mobile-nav-links .nav-link:hover { color: #00f5ff !important; background: rgba(0,245,255,.08); }
+    </style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════
+     TOP NAVBAR
+════════════════════════════════════════ -->
+<nav class="navbar navbar-expand-lg">
+    <div class="container-fluid px-3">
+
+        <!-- Brand -->
+        <a class="navbar-brand" href="{{ url_for('index') }}">
+            <i class="fa-solid fa-shield-halved me-2"></i>KriptoKlasik
+        </a>
+
+        <!-- Mobile toggler -->
+        <button class="navbar-toggler border-0 text-secondary" type="button"
+                data-bs-toggle="collapse" data-bs-target="#mobileNav">
+            <i class="fa-solid fa-bars"></i>
+        </button>
+
+        <!-- Mobile nav (hidden on desktop — sidebar takes over) -->
+        <div class="collapse navbar-collapse" id="mobileNav">
+            <ul class="navbar-nav mobile-nav-links me-auto d-flex d-lg-none flex-row flex-wrap gap-1 mt-2 mt-lg-0">
+                <li class="nav-item"><a class="nav-link" href="{{ url_for('caesar.index') }}"><i class="fa-solid fa-arrow-right-arrow-left me-1"></i>Caesar</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{ url_for('vigenere.index') }}"><i class="fa-solid fa-key me-1"></i>Vigenère</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{ url_for('affine.index') }}"><i class="fa-solid fa-calculator me-1"></i>Affine</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{ url_for('hill.index') }}"><i class="fa-solid fa-table-cells me-1"></i>Hill</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{ url_for('playfair.index') }}"><i class="fa-solid fa-chess-board me-1"></i>Playfair</a></li>
+                <li class="nav-item"><a class="nav-link" style="color:#ff6b35!important" href="{{ url_for('history') }}"><i class="fa-solid fa-clock-rotate-left me-1"></i>History</a></li>
+            </ul>
+
+            <!-- Right side: theme toggle -->
+            <div class="ms-auto d-flex align-items-center mt-2 mt-lg-0">
+                <button class="btn btn-sm" id="theme-toggle">
+                    <i class="fa-solid fa-moon me-1" id="theme-icon"></i>
+                    <span id="theme-text">Light</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<!-- ════════════════════════════════════════
+     LAYOUT SHELL  (sidebar + main)
+════════════════════════════════════════ -->
+<div class="layout-shell">
+
+    <!-- ── SIDEBAR (desktop only) ── -->
+    <aside class="sidebar d-none d-lg-flex flex-column">
+
+        <span class="sidebar-label">Menu Utama</span>
+        <a href="{{ url_for('index') }}"
+           class="sidebar-link {% if request.endpoint == 'index' %}active{% endif %}">
+            <i class="fa-solid fa-house"></i> Dashboard
+        </a>
+
+        <span class="sidebar-label">Algoritma</span>
+        <a href="{{ url_for('caesar.index') }}"
+           class="sidebar-link link-caesar {% if request.blueprint == 'caesar' %}active{% endif %}">
+            <i class="fa-solid fa-arrow-right-arrow-left"></i> Caesar
+        </a>
+        <a href="{{ url_for('vigenere.index') }}"
+           class="sidebar-link link-vigenere {% if request.blueprint == 'vigenere' %}active{% endif %}">
+            <i class="fa-solid fa-key"></i> Vigenère
+        </a>
+        <a href="{{ url_for('affine.index') }}"
+           class="sidebar-link link-affine {% if request.blueprint == 'affine' %}active{% endif %}">
+            <i class="fa-solid fa-calculator"></i> Affine
+        </a>
+        <a href="{{ url_for('hill.index') }}"
+           class="sidebar-link link-hill {% if request.blueprint == 'hill' %}active{% endif %}">
+            <i class="fa-solid fa-table-cells"></i> Hill
+        </a>
+        <a href="{{ url_for('playfair.index') }}"
+           class="sidebar-link link-playfair {% if request.blueprint == 'playfair' %}active{% endif %}">
+            <i class="fa-solid fa-chess-board"></i> Playfair
+        </a>
+
+        <span class="sidebar-label">Lainnya</span>
+        <a href="{{ url_for('history') }}"
+           class="sidebar-link link-history {% if request.endpoint == 'history' %}active{% endif %}">
+            <i class="fa-solid fa-clock-rotate-left"></i> History
+        </a>
+
+        <!-- Spacer + version tag at bottom -->
+        <div class="mt-auto px-4 pt-3">
+            <div style="font-family:'Share Tech Mono',monospace;font-size:.65rem;
+                        color:#33335a;letter-spacing:1px;line-height:1.8;">
+                <div style="color:#00f5ff;opacity:.5;">▸ v1.0.0</div>
+                <div>Kriptografi Klasik</div>
+                <div>Sem 6 · 2025/2026</div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- ── MAIN CONTENT ── -->
+    <main class="main-content">
+        {% block content %}{% endblock %}
+    </main>
+
+</div><!-- /layout-shell -->
+
+<!-- ════════════════════════════════════════
+     FOOTER
+════════════════════════════════════════ -->
+<footer>
+    <span>
+        <span class="footer-dot"></span>
+        <small>&copy; 2026 <strong style="color:#8888bb;">Rahayu Febrianti</strong> — Informatika UNIBBA</small>
+    </span>
+    <small style="color:#33335a;">Tugas Mata Kuliah Kriptografi &nbsp;·&nbsp; Semester 6</small>
+</footer>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Dark / Light Mode Script -->
+<script>
+    const html       = document.documentElement;
+    const toggle     = document.getElementById('theme-toggle');
+    const icon       = document.getElementById('theme-icon');
+    const label      = document.getElementById('theme-text');
+
+    // Default: dark
+    const saved = localStorage.getItem('theme') || 'dark';
+    applyTheme(saved);
+
+    toggle.addEventListener('click', () => {
+        applyTheme(html.getAttribute('data-bs-theme') === 'dark' ? 'light' : 'dark');
+    });
+
+    function applyTheme(t) {
+        html.setAttribute('data-bs-theme', t);
+        localStorage.setItem('theme', t);
+        if (t === 'dark') {
+            icon.className  = 'fa-solid fa-sun me-1';
+            label.textContent = 'Light';
+        } else {
+            icon.className  = 'fa-solid fa-moon me-1';
+            label.textContent = 'Dark';
+        }
+    }
+</script>
+
+{% block extra_js %}{% endblock %}
+
+</body>
+</html>

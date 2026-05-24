@@ -1,0 +1,530 @@
+{% extends 'base.html' %}
+
+{% block title %}Affine Cipher{% endblock %}
+
+{% block content %}
+
+<!-- ── Page Header ── -->
+<div class="page-header mb-4">
+    <div class="page-header-left">
+        <div class="page-breadcrumb">
+            <a href="{{ url_for('index') }}" class="breadcrumb-link">Dashboard</a>
+            <i class="fa-solid fa-chevron-right breadcrumb-sep"></i>
+            <span class="breadcrumb-current">Affine Cipher</span>
+        </div>
+        <h1 class="page-title title-affine">
+            <i class="fa-solid fa-calculator me-3"></i>Affine Cipher
+        </h1>
+        <p class="page-desc">
+            Kombinasi sandi perkalian (Multiplicative) dan pergeseran (Caesar). Syarat mutlak: Nilai kunci <strong>A</strong> harus saling prima (coprime) dengan 26.
+        </p>
+    </div>
+    <!-- Formula badge -->
+    <div class="formula-badge badge-affine-color d-none d-md-flex">
+        <div class="formula-label">Rumus Enkripsi</div>
+        <div class="formula-main"><code>C = (a × P + b) mod 26</code></div>
+        <div class="formula-label mt-1">Rumus Dekripsi</div>
+        <div class="formula-main"><code>P = a⁻¹ × (C − b) mod 26</code></div>
+    </div>
+</div>
+
+<!-- Menampilkan Error jika Nilai A salah -->
+{% if error_message %}
+<div class="alert-neon-danger mb-4">
+    <i class="fa-solid fa-triangle-exclamation me-2"></i> <strong>Kesalahan Matematis:</strong> {{ error_message }}
+</div>
+{% endif %}
+
+<!-- ── Main Grid ── -->
+<div class="row g-4">
+
+    <!-- ════ LEFT: Config Panel ════ -->
+    <div class="col-lg-4">
+        <div class="config-panel panel-affine">
+
+            <!-- Header -->
+            <div class="config-panel-header header-affine">
+                <i class="fa-solid fa-sliders"></i>
+                <span>Konfigurasi</span>
+                <div class="header-dot dot-affine ms-auto"></div>
+            </div>
+
+            <!-- Body / Form -->
+            <div class="config-panel-body">
+                <form method="POST" action="{{ url_for('affine.index') }}">
+
+                    <!-- Text Input -->
+                    <div class="field-group mb-3">
+                        <label class="field-label">
+                            <i class="fa-solid fa-align-left me-2"></i>Teks Input
+                        </label>
+                        <textarea class="game-input"
+                                  name="text"
+                                  rows="4"
+                                  placeholder="Masukkan pesan di sini..." required>{{ text_input }}</textarea>
+                    </div>
+
+                    <!-- Keys A and B (Side by side) -->
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <div class="field-group">
+                                <label class="field-label">Kunci A</label>
+                                <input type="number" class="game-input" name="a" value="{{ a_val }}" required>
+                                <div class="field-hint">Coprime dg 26</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="field-group">
+                                <label class="field-label">Kunci B</label>
+                                <input type="number" class="game-input" name="b" value="{{ b_val }}" required>
+                                <div class="field-hint">Angka 0-25</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Mode -->
+                    <div class="field-group mb-4">
+                        <label class="field-label">
+                            <i class="fa-solid fa-code-branch me-2"></i>Mode Operasi
+                        </label>
+                        <div class="mode-toggle">
+                            <label class="mode-option {% if mode == 'encrypt' %}mode-active-affine{% endif %}">
+                                <input type="radio" name="mode" value="encrypt"
+                                       {% if mode == 'encrypt' %}checked{% endif %} hidden>
+                                <i class="fa-solid fa-lock me-1"></i> Enkripsi
+                            </label>
+                            <label class="mode-option {% if mode == 'decrypt' %}mode-active-affine{% endif %}">
+                                <input type="radio" name="mode" value="decrypt"
+                                       {% if mode == 'decrypt' %}checked{% endif %} hidden>
+                                <i class="fa-solid fa-lock-open me-1"></i> Dekripsi
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Submit -->
+                    <button type="submit" class="btn-run btn-run-affine">
+                        <i class="fa-solid fa-bolt me-2"></i>
+                        Proses Affine
+                        <span class="btn-run-arrow">→</span>
+                    </button>
+
+                </form>
+            </div>
+        </div><!-- /config-panel -->
+
+        <!-- Info box below form -->
+        <div class="info-aside mt-3">
+            <div class="info-aside-title">
+                <i class="fa-solid fa-circle-info me-2" style="color:#ff3366;"></i>Cara Kerja
+            </div>
+            <p><strong>A</strong> adalah faktor pengali (harus memiliki invers modulo 26, contoh: 1, 3, 5, 7, 9, 11...). <strong>B</strong> adalah nilai pergeseran.</p>
+            <p class="mb-0">Proses dekripsi membutuhkan nilai invers matematis dari A (ditulis sebagai a⁻¹).</p>
+        </div>
+    </div><!-- /col-lg-4 -->
+
+    <!-- ════ RIGHT: Result + Steps ════ -->
+    <div class="col-lg-8">
+
+        {% if result_text and not error_message %}
+
+        <!-- ── Result Box ── -->
+        <div class="result-panel panel-affine mb-4">
+            <div class="result-panel-header header-affine-result">
+                <div class="result-status-dot"></div>
+                <span>Hasil {{ 'Enkripsi' if mode == 'encrypt' else 'Dekripsi' }}</span>
+                <div class="result-meta ms-auto">
+                    <span class="meta-chip">A={{ a_val }}, B={{ b_val }}</span>
+                    <span class="meta-chip chip-mode">{{ 'ENCRYPT' if mode == 'encrypt' else 'DECRYPT' }}</span>
+                </div>
+            </div>
+
+            <!-- Input row -->
+            <div class="result-row">
+                <div class="result-row-label">INPUT</div>
+                <div class="result-value value-muted">{{ text_input }}</div>
+            </div>
+
+            <!-- Output row -->
+            <div class="result-row result-row-output">
+                <div class="result-row-label label-affine">OUTPUT</div>
+                <div class="result-value value-affine">{{ result_text }}</div>
+            </div>
+
+            <!-- Copy button -->
+            <div class="result-actions">
+                <button class="btn-copy" onclick="copyResult('{{ result_text }}')">
+                    <i class="fa-regular fa-copy me-1"></i> Salin Hasil
+                </button>
+                <span class="copy-feedback" id="copy-feedback"></span>
+            </div>
+        </div>
+
+        <!-- ── Steps Table ── -->
+        <div class="steps-panel">
+
+            <div class="steps-panel-header">
+                <i class="fa-solid fa-list-ol me-2" style="color:#ff3366;"></i>
+                <span>Langkah Perhitungan Per Karakter</span>
+                <span class="steps-count ms-auto">{{ steps|length }} karakter</span>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table-steps">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Input</th>
+                            <th>Output</th>
+                            <th>Rumus Matematis</th>
+                            <th>Penjelasan Modulo 26</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for step in steps %}
+                        <tr class="{% if step.is_alpha %}row-alpha{% else %}row-skip{% endif %}">
+                            <td class="col-idx">{{ loop.index }}</td>
+                            <td><span class="char-box char-input">{{ step.original }}</span></td>
+                            <td>
+                                <span class="char-box char-affine">{{ step.result }}</span>
+                            </td>
+                            <td>
+                                {% if step.is_alpha %}
+                                    <code class="formula-code">{{ step.formula }}</code>
+                                {% else %}
+                                    <span class="skip-badge">skip</span>
+                                {% endif %}
+                            </td>
+                            <td class="col-explain">{{ step.explanation }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div><!-- /steps-panel -->
+
+        {% elif not error_message %}
+
+        <!-- ── Empty State ── -->
+        <div class="empty-state">
+            <div class="empty-icon"><i class="fa-solid fa-calculator"></i></div>
+            <div class="empty-title">Siap Digunakan</div>
+            <div class="empty-desc">
+                Isi teks dan nilai A & B di panel kiri,<br>
+                lalu klik <strong>Proses Affine</strong> untuk melihat simulasi.
+            </div>
+            <div class="empty-example">
+                <span class="ex-label">Ingat:</span>
+                <span class="ex-plain">Nilai A tidak boleh genap atau 13</span>
+            </div>
+        </div>
+
+        {% endif %}
+
+    </div><!-- /col-lg-8 -->
+</div><!-- /row -->
+
+{% endblock %}
+
+{% block extra_js %}
+<style>
+/* ════════════════════════════════════════
+   AFFINE PAGE — SCOPED STYLES (NEON CRIMSON)
+════════════════════════════════════════ */
+
+/* ── Page Header ── */
+.page-header {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    gap: 1.5rem; flex-wrap: wrap;
+}
+.page-breadcrumb {
+    display: flex; align-items: center; gap: 6px;
+    font-family: 'Rajdhani', sans-serif; font-size: .78rem; letter-spacing: 1px;
+    margin-bottom: .5rem;
+}
+.breadcrumb-link { color: #44447a; text-decoration: none; }
+.breadcrumb-link:hover { color: #ff3366; }
+.breadcrumb-sep { color: #33335a; font-size: .6rem; }
+.breadcrumb-current { color: #ff3366; }
+
+.page-title {
+    font-family: 'Orbitron', sans-serif; font-size: clamp(1.2rem,3vw,1.7rem);
+    font-weight: 900; letter-spacing: 2px; margin-bottom: .4rem;
+}
+.title-affine { color: #ff3366; text-shadow: 0 0 18px rgba(255,51,102,.45); }
+
+.page-desc {
+    font-family: 'Rajdhani', sans-serif; color: #66667a; font-size: .92rem; max-width: 480px;
+}
+
+/* Formula badge */
+.formula-badge {
+    display: flex; flex-direction: column;
+    background: rgba(255,51,102,.05); border: 1px solid rgba(255,51,102,.2);
+    border-radius: 12px; padding: .9rem 1.25rem; gap: 2px; min-width: 220px;
+}
+.badge-affine-color { border-color: rgba(255,51,102,.2); }
+.formula-label {
+    font-family: 'Orbitron', sans-serif; font-size: .6rem; letter-spacing: 2px;
+    color: #44447a; text-transform: uppercase;
+}
+.formula-main code {
+    font-family: 'Share Tech Mono', monospace; font-size: .88rem;
+    color: #ff3366; background: none; padding: 0;
+}
+
+/* Neon Alert Box */
+.alert-neon-danger {
+    background: rgba(255,51,102,0.08);
+    border: 1px solid rgba(255,51,102,0.25);
+    border-left: 4px solid #ff3366;
+    color: #ffb3c6;
+    padding: 1rem 1.25rem;
+    border-radius: 8px;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 1.05rem;
+    box-shadow: 0 4px 15px rgba(255,51,102,0.1);
+}
+
+/* ── Config Panel ── */
+.config-panel {
+    background: #0b0b1e; border-radius: 12px;
+    border: 1px solid rgba(255,255,255,.08); overflow: hidden;
+}
+.panel-affine { border-top: 2px solid #ff3366; }
+
+.config-panel-header {
+    display: flex; align-items: center; gap: 8px; padding: .75rem 1.2rem;
+    font-family: 'Orbitron', sans-serif; font-size: .7rem; font-weight: 700;
+    letter-spacing: 2.5px; text-transform: uppercase;
+}
+.header-affine { background: rgba(255,51,102,.07); color: #ff3366; border-bottom: 1px solid rgba(255,51,102,.15); }
+
+.header-dot {
+    width: 8px; height: 8px; border-radius: 50%; animation: pulse-dot 2s infinite;
+}
+.dot-affine { background: #ff3366; box-shadow: 0 0 6px #ff3366; }
+@keyframes pulse-dot {
+    0%,100% { opacity: 1; transform: scale(1); }
+    50%      { opacity: .4; transform: scale(.7); }
+}
+
+.config-panel-body { padding: 1.25rem; }
+
+/* Form fields */
+.field-label {
+    font-family: 'Rajdhani', sans-serif; font-size: .78rem; font-weight: 700;
+    letter-spacing: 2px; text-transform: uppercase; color: #55557a;
+    display: block; margin-bottom: .4rem;
+}
+.game-input {
+    width: 100%; background: #06060f; border: 1px solid rgba(255,255,255,.1);
+    border-radius: 8px; color: #e0e0ff; font-family: 'Rajdhani', sans-serif;
+    font-size: .95rem; padding: .55rem .85rem; resize: vertical;
+    transition: border-color .2s, box-shadow .2s; outline: none;
+}
+.game-input:focus {
+    border-color: #ff3366; box-shadow: 0 0 0 3px rgba(255,51,102,.12);
+}
+.game-input::placeholder { color: #333355; }
+.field-hint {
+    font-family: 'Rajdhani', sans-serif; font-size: .75rem; color: #33335a; margin-top: .3rem;
+}
+
+/* Mode toggle */
+.mode-toggle { display: flex; gap: 8px; }
+.mode-option {
+    flex: 1; display: flex; align-items: center; justify-content: center;
+    font-family: 'Rajdhani', sans-serif; font-size: .85rem; font-weight: 700;
+    letter-spacing: 1px; padding: .55rem; border-radius: 8px;
+    border: 1px solid rgba(255,255,255,.1); background: #06060f; color: #55557a;
+    cursor: pointer; transition: all .2s;
+}
+.mode-option:hover { border-color: rgba(255,51,102,.3); color: #ff3366; }
+.mode-active-affine { border-color: #ff3366 !important; color: #ff3366 !important; background: rgba(255,51,102,.1) !important; }
+
+/* Run button */
+.btn-run {
+    width: 100%; display: flex; align-items: center; justify-content: center; gap: 4px;
+    font-family: 'Orbitron', sans-serif; font-size: .75rem; font-weight: 700;
+    letter-spacing: 2.5px; text-transform: uppercase; padding: .75rem;
+    border-radius: 8px; border: none; cursor: pointer; transition: all .25s;
+    position: relative; overflow: hidden;
+}
+.btn-run-arrow { margin-left: auto; transition: transform .25s; }
+.btn-run:hover .btn-run-arrow { transform: translateX(4px); }
+.btn-run-affine {
+    background: rgba(255,51,102,.12); color: #ff3366; border: 1px solid rgba(255,51,102,.3);
+}
+.btn-run-affine:hover {
+    background: rgba(255,51,102,.22); box-shadow: 0 0 20px rgba(255,51,102,.2);
+}
+
+/* Info aside */
+.info-aside {
+    background: #0b0b1e; border: 1px solid rgba(255,255,255,.07);
+    border-left: 3px solid #ff3366; border-radius: 10px; padding: 1rem 1.15rem;
+}
+.info-aside-title {
+    font-family: 'Orbitron', sans-serif; font-size: .68rem; letter-spacing: 2px;
+    text-transform: uppercase; color: #aaaacc; margin-bottom: .6rem;
+}
+.info-aside p {
+    font-family: 'Rajdhani', sans-serif; font-size: .88rem; color: #66667a;
+    line-height: 1.6; margin-bottom: .4rem;
+}
+
+/* ── Result Panel ── */
+.result-panel {
+    background: #0b0b1e; border-radius: 12px; border: 1px solid rgba(255,255,255,.08); overflow: hidden;
+}
+.panel-affine { border-top: 2px solid #ff3366; }
+
+.result-panel-header {
+    display: flex; align-items: center; gap: 8px; padding: .7rem 1.2rem;
+    font-family: 'Orbitron', sans-serif; font-size: .7rem; font-weight: 700;
+    letter-spacing: 2px; text-transform: uppercase;
+}
+.header-affine-result { background: rgba(255,51,102,.08); color: #ff3366; border-bottom: 1px solid rgba(255,51,102,.12); }
+
+.result-status-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: #ff3366; box-shadow: 0 0 8px #ff3366; animation: pulse-dot 1.5s infinite;
+}
+
+/* Meta chips */
+.meta-chip {
+    font-family: 'Share Tech Mono', monospace; font-size: .68rem;
+    background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.1);
+    border-radius: 4px; padding: 2px 8px; color: #8888aa; margin-left: 6px;
+}
+.chip-mode { color: #ff3366; border-color: rgba(255,51,102,.25); background: rgba(255,51,102,.08); }
+
+/* Result rows */
+.result-row {
+    display: flex; align-items: flex-start; gap: 12px; padding: .85rem 1.2rem;
+    border-bottom: 1px solid rgba(255,255,255,.05);
+}
+.result-row-output { background: rgba(255,51,102,.03); }
+
+.result-row-label {
+    font-family: 'Orbitron', sans-serif; font-size: .6rem; font-weight: 700;
+    letter-spacing: 2px; text-transform: uppercase; color: #33335a; min-width: 52px; padding-top: 3px;
+}
+.label-affine { color: #ff3366; }
+
+.result-value {
+    font-family: 'Share Tech Mono', monospace; font-size: 1.05rem;
+    word-break: break-all; line-height: 1.7; letter-spacing: 2px;
+}
+.value-muted  { color: #44445a; }
+.value-affine { color: #ff3366; text-shadow: 0 0 8px rgba(255,51,102,.35); }
+
+.result-actions { padding: .6rem 1.2rem; display: flex; align-items: center; gap: 10px; }
+.btn-copy {
+    font-family: 'Rajdhani', sans-serif; font-size: .8rem; font-weight: 700;
+    letter-spacing: 1px; background: rgba(255,51,102,.08); border: 1px solid rgba(255,51,102,.25);
+    border-radius: 6px; color: #ff3366; padding: 4px 14px; cursor: pointer; transition: all .2s;
+}
+.btn-copy:hover { background: rgba(255,51,102,.18); }
+.copy-feedback { font-family: 'Rajdhani', sans-serif; font-size: .8rem; color: #39ff14; }
+
+/* ── Steps Panel ── */
+.steps-panel {
+    background: #0b0b1e; border-radius: 12px; border: 1px solid rgba(255,255,255,.08); overflow: hidden;
+}
+.steps-panel-header {
+    display: flex; align-items: center; padding: .75rem 1.2rem;
+    font-family: 'Orbitron', sans-serif; font-size: .7rem; font-weight: 700;
+    letter-spacing: 2px; text-transform: uppercase; color: #8888bb;
+    background: rgba(255,255,255,.03); border-bottom: 1px solid rgba(255,255,255,.07);
+}
+.steps-count { font-family: 'Share Tech Mono', monospace; font-size: .7rem; color: #44447a; }
+
+/* Table */
+.table-steps { width: 100%; border-collapse: collapse; font-family: 'Rajdhani', sans-serif; font-size: .9rem; }
+.table-steps thead th {
+    padding: .6rem 1rem; font-family: 'Orbitron', sans-serif; font-size: .62rem; font-weight: 700;
+    letter-spacing: 2px; text-transform: uppercase; color: #44447a;
+    background: rgba(255,255,255,.03); border-bottom: 1px solid rgba(255,255,255,.08);
+    text-align: center; white-space: nowrap;
+}
+.table-steps tbody tr { border-bottom: 1px solid rgba(255,255,255,.04); transition: background .15s; }
+.table-steps tbody tr:hover { background: rgba(255,255,255,.03); }
+.table-steps tbody tr.row-skip { opacity: .55; }
+.table-steps td { padding: .55rem 1rem; text-align: center; vertical-align: middle; color: #aaaacc; }
+.col-idx { color: #33335a; font-family: 'Share Tech Mono', monospace; font-size: .8rem; }
+.col-explain { text-align: left; color: #55557a; font-size: .82rem; min-width: 180px; }
+
+/* Char boxes */
+.char-box {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 32px; height: 32px; border-radius: 6px;
+    font-family: 'Share Tech Mono', monospace; font-size: 1rem; font-weight: 700;
+}
+.char-input  { background: rgba(255,255,255,.07); color: #ccccee; border: 1px solid rgba(255,255,255,.12); }
+.char-affine { background: rgba(255,51,102,.1); color: #ff3366; border: 1px solid rgba(255,51,102,.25); }
+
+.formula-code {
+    font-family: 'Share Tech Mono', monospace; font-size: .78rem;
+    background: rgba(255,204,102,.08); color: #ffcc66; border: 1px solid rgba(255,204,102,.15);
+    border-radius: 4px; padding: 2px 7px; white-space: nowrap;
+}
+.skip-badge {
+    font-family: 'Orbitron', sans-serif; font-size: .6rem; letter-spacing: 1px;
+    background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1);
+    border-radius: 4px; color: #333355; padding: 2px 8px;
+}
+
+/* ── Empty State ── */
+.empty-state {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    min-height: 340px; background: #0b0b1e; border: 1px dashed rgba(255,51,102,.2);
+    border-radius: 12px; padding: 2.5rem; text-align: center;
+}
+.empty-icon { font-size: 2.5rem; color: rgba(255,51,102,.2); margin-bottom: 1rem; }
+.empty-title {
+    font-family: 'Orbitron', sans-serif; font-size: .9rem; letter-spacing: 2px;
+    color: #33335a; margin-bottom: .5rem; text-transform: uppercase;
+}
+.empty-desc {
+    font-family: 'Rajdhani', sans-serif; color: #44446a; font-size: .9rem;
+    line-height: 1.65; margin-bottom: 1.5rem;
+}
+.empty-example {
+    display: flex; align-items: center; flex-wrap: wrap; justify-content: center; gap: 4px;
+    font-family: 'Share Tech Mono', monospace; font-size: .85rem;
+    background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.08);
+    border-radius: 8px; padding: .6rem 1.2rem;
+}
+.ex-label { color: #ff3366; font-size: .75rem; letter-spacing: 1px; }
+.ex-plain { color: #ccccee; }
+
+/* Light mode overrides */
+[data-bs-theme="light"] .config-panel,
+[data-bs-theme="light"] .result-panel,
+[data-bs-theme="light"] .steps-panel,
+[data-bs-theme="light"] .info-aside,
+[data-bs-theme="light"] .empty-state { background: #ffffff; border-color: rgba(0,0,0,.08); }
+[data-bs-theme="light"] .game-input  { background: #fff5f7; color: #2b0d14; border-color: rgba(0,0,0,.12); }
+[data-bs-theme="light"] .col-explain,
+[data-bs-theme="light"] .page-desc { color: #555577; }
+</style>
+
+<script>
+document.querySelectorAll('.mode-option input[type=radio]').forEach(radio => {
+    radio.addEventListener('change', () => {
+        document.querySelectorAll('.mode-option').forEach(el => {
+            el.classList.remove('mode-active-affine');
+        });
+        if (radio.checked) radio.closest('.mode-option').classList.add('mode-active-affine');
+    });
+});
+
+function copyResult(text) {
+    navigator.clipboard.writeText(text).then(() => {
+        const fb = document.getElementById('copy-feedback');
+        if (fb) { fb.textContent = '✓ Tersalin!'; setTimeout(() => fb.textContent = '', 2000); }
+    });
+}
+</script>
+{% endblock %}

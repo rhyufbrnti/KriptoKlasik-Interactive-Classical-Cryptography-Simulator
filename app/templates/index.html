@@ -1,0 +1,532 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+
+<!-- ════════════════════════════════════════
+     HERO BANNER
+════════════════════════════════════════ -->
+<div class="hero-banner mb-5">
+    <!-- Floating orbs decoration -->
+    <div class="orb orb-cyan"></div>
+    <div class="orb orb-pink"></div>
+
+    <div class="hero-inner">
+        <div class="hero-badge">
+            <i class="fa-solid fa-microchip me-2"></i>Kriptografi Klasik · Semester 6
+        </div>
+
+        <h1 class="hero-title">
+            Simulasi <span class="glow-cyan">Enkripsi</span><br>
+            &amp; <span class="glow-pink">Dekripsi</span> Klasik
+        </h1>
+
+        <p class="hero-subtitle">
+            Pelajari cara kerja 5 algoritma kriptografi klasik secara transparan —
+            lengkap dengan langkah perhitungan, rumus matematis, dan visualisasi interaktif.
+        </p>
+
+        <div class="hero-stats">
+            <div class="stat-item">
+                <span class="stat-number glow-cyan">5</span>
+                <span class="stat-label">Algoritma</span>
+            </div>
+            <div class="stat-divider"></div>
+            <div class="stat-item">
+                <span class="stat-number glow-pink">∞</span>
+                <span class="stat-label">Enkripsi</span>
+            </div>
+            <div class="stat-divider"></div>
+            <div class="stat-item">
+                <span class="stat-number glow-yellow">26</span>
+                <span class="stat-label">Alfabet</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     SECTION LABEL
+════════════════════════════════════════ -->
+<div class="section-label mb-3">
+    <span class="section-line"></span>
+    <span class="section-text"><i class="fa-solid fa-list-check me-2"></i>Pilih Algoritma</span>
+    <span class="section-line"></span>
+</div>
+
+<!-- ════════════════════════════════════════
+     CIPHER CARDS GRID
+════════════════════════════════════════ -->
+<div class="row g-4 mb-5">
+
+    <!-- Caesar -->
+    <div class="col-sm-6 col-xl-4">
+        <div class="cipher-card card-caesar">
+            <div class="cipher-card-glow glow-bg-cyan"></div>
+            <div class="cipher-card-body">
+                <div class="cipher-icon-wrap icon-wrap-cyan">
+                    <i class="fa-solid fa-arrow-right-arrow-left"></i>
+                </div>
+                <div class="cipher-tag tag-cyan">Substitusi</div>
+                <h4 class="cipher-name">Caesar Cipher</h4>
+                <p class="cipher-desc">
+                    Menggeser setiap huruf alfabet sebanyak nilai <em>shift</em> tertentu.
+                    Algoritma kriptografi paling klasik, digunakan sejak zaman Romawi.
+                </p>
+                <div class="cipher-formula">
+                    <code>C = (P + k) mod 26</code>
+                </div>
+            </div>
+            <a href="{{ url_for('caesar.index') }}" class="cipher-btn btn-cyan">
+                <i class="fa-solid fa-play me-2"></i>Mulai Simulasi
+                <i class="fa-solid fa-arrow-right ms-2 arrow-icon"></i>
+            </a>
+        </div>
+    </div>
+
+    <!-- Vigenère -->
+    <div class="col-sm-6 col-xl-4">
+        <div class="cipher-card card-vigenere">
+            <div class="cipher-card-glow glow-bg-green"></div>
+            <div class="cipher-card-body">
+                <div class="cipher-icon-wrap icon-wrap-green">
+                    <i class="fa-solid fa-key"></i>
+                </div>
+                <div class="cipher-tag tag-green">Polialfabetik</div>
+                <h4 class="cipher-name">Vigenère Cipher</h4>
+                <p class="cipher-desc">
+                    Pergeseran yang berubah-ubah berdasarkan kata kunci berulang.
+                    Lebih kuat dari Caesar karena bersifat polialfabetik.
+                </p>
+                <div class="cipher-formula">
+                    <code>C = (P + K<sub>i</sub>) mod 26</code>
+                </div>
+            </div>
+            <a href="{{ url_for('vigenere.index') }}" class="cipher-btn btn-green">
+                <i class="fa-solid fa-play me-2"></i>Mulai Simulasi
+                <i class="fa-solid fa-arrow-right ms-2 arrow-icon"></i>
+            </a>
+        </div>
+    </div>
+
+    <!-- Affine -->
+    <div class="col-sm-6 col-xl-4">
+        <div class="cipher-card card-affine">
+            <div class="cipher-card-glow glow-bg-pink"></div>
+            <div class="cipher-card-body">
+                <div class="cipher-icon-wrap icon-wrap-pink">
+                    <i class="fa-solid fa-calculator"></i>
+                </div>
+                <div class="cipher-tag tag-pink">Matematika</div>
+                <h4 class="cipher-name">Affine Cipher</h4>
+                <p class="cipher-desc">
+                    Kombinasi perkalian dan pergeseran dengan invers modular.
+                    Kunci terdiri dari dua nilai integer <em>a</em> dan <em>b</em>.
+                </p>
+                <div class="cipher-formula">
+                    <code>C = (a·P + b) mod 26</code>
+                </div>
+            </div>
+            <a href="{{ url_for('affine.index') }}" class="cipher-btn btn-pink">
+                <i class="fa-solid fa-play me-2"></i>Mulai Simulasi
+                <i class="fa-solid fa-arrow-right ms-2 arrow-icon"></i>
+            </a>
+        </div>
+    </div>
+
+    <!-- Hill -->
+    <div class="col-sm-6 col-xl-6">
+        <div class="cipher-card card-hill">
+            <div class="cipher-card-glow glow-bg-yellow"></div>
+            <div class="cipher-card-body">
+                <div class="cipher-icon-wrap icon-wrap-yellow">
+                    <i class="fa-solid fa-table-cells"></i>
+                </div>
+                <div class="cipher-tag tag-yellow">Aljabar Linier</div>
+                <h4 class="cipher-name">Hill Cipher</h4>
+                <p class="cipher-desc">
+                    Menggunakan perkalian matriks kunci (2×2 atau 3×3) dengan vektor
+                    plainteks. Membutuhkan invers matriks modular untuk dekripsi.
+                </p>
+                <div class="cipher-formula">
+                    <code>C = K · P (mod 26)</code>
+                </div>
+            </div>
+            <a href="{{ url_for('hill.index') }}" class="cipher-btn btn-yellow">
+                <i class="fa-solid fa-play me-2"></i>Mulai Simulasi
+                <i class="fa-solid fa-arrow-right ms-2 arrow-icon"></i>
+            </a>
+        </div>
+    </div>
+
+    <!-- Playfair -->
+    <div class="col-sm-12 col-xl-6">
+        <div class="cipher-card card-playfair">
+            <div class="cipher-card-glow glow-bg-purple"></div>
+            <div class="cipher-card-body">
+                <div class="cipher-icon-wrap icon-wrap-purple">
+                    <i class="fa-solid fa-chess-board"></i>
+                </div>
+                <div class="cipher-tag tag-purple">Digraph</div>
+                <h4 class="cipher-name">Playfair Cipher</h4>
+                <p class="cipher-desc">
+                    Mengenkripsi pasangan huruf (digraph) menggunakan tabel 5×5
+                    yang digenerate dari kata kunci. Aturan baris, kolom, dan kotak.
+                </p>
+                <div class="cipher-formula">
+                    <code>5×5 Key Matrix · Digraph Rules</code>
+                </div>
+            </div>
+            <a href="{{ url_for('playfair.index') }}" class="cipher-btn btn-purple">
+                <i class="fa-solid fa-play me-2"></i>Mulai Simulasi
+                <i class="fa-solid fa-arrow-right ms-2 arrow-icon"></i>
+            </a>
+        </div>
+    </div>
+
+</div><!-- /row -->
+
+<!-- ════════════════════════════════════════
+     BOTTOM INFO ROW
+════════════════════════════════════════ -->
+<div class="row g-3">
+    <div class="col-md-4">
+        <div class="info-card">
+            <i class="fa-solid fa-graduation-cap info-icon" style="color:#00f5ff;"></i>
+            <div>
+                <div class="info-title">Tujuan Edukatif</div>
+                <div class="info-body">Setiap simulasi menampilkan proses perhitungan langkah demi langkah agar mudah dipahami.</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="info-card">
+            <i class="fa-solid fa-clock-rotate-left info-icon" style="color:#ff6b35;"></i>
+            <div>
+                <div class="info-title">Riwayat Tersimpan</div>
+                <div class="info-body">Semua operasi enkripsi/dekripsi tersimpan otomatis di <a href="{{ url_for('history') }}" style="color:#ff6b35;">halaman History</a>.</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="info-card">
+            <i class="fa-solid fa-moon info-icon" style="color:#bf5fff;"></i>
+            <div>
+                <div class="info-title">Dark / Light Mode</div>
+                <div class="info-body">Gunakan tombol di pojok kanan atas untuk mengganti tema sesuai preferensi.</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+
+{% block extra_js %}
+<style>
+/* ════════════════════════════════════════
+   INDEX PAGE STYLES
+════════════════════════════════════════ */
+
+/* ── Hero Banner ── */
+.hero-banner {
+    position: relative;
+    background: linear-gradient(135deg, #07071a 0%, #130a2e 50%, #081428 100%);
+    border: 1px solid rgba(0,245,255,.15);
+    border-radius: 16px;
+    padding: 3rem 2.5rem 2.5rem;
+    overflow: hidden;
+}
+
+/* Floating orbs */
+.orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(60px);
+    pointer-events: none;
+}
+.orb-cyan  { width: 300px; height: 300px; background: rgba(0,245,255,.08);  top: -80px; right: -60px; }
+.orb-pink  { width: 250px; height: 250px; background: rgba(255,45,155,.07); bottom: -60px; left: 10%; }
+
+.hero-inner { position: relative; z-index: 1; max-width: 680px; }
+
+.hero-badge {
+    display: inline-flex;
+    align-items: center;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: .78rem;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #00f5ff;
+    background: rgba(0,245,255,.1);
+    border: 1px solid rgba(0,245,255,.25);
+    border-radius: 20px;
+    padding: 4px 14px;
+    margin-bottom: 1.25rem;
+}
+
+.hero-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: clamp(1.6rem, 3.5vw, 2.6rem);
+    font-weight: 900;
+    color: #fff;
+    line-height: 1.2;
+    letter-spacing: 1px;
+    margin-bottom: 1rem;
+}
+.glow-cyan  { color: #00f5ff; text-shadow: 0 0 20px rgba(0,245,255,.6); }
+.glow-pink  { color: #ff2d9b; text-shadow: 0 0 20px rgba(255,45,155,.6); }
+.glow-yellow{ color: #ffe000; text-shadow: 0 0 20px rgba(255,224,0,.6); }
+
+.hero-subtitle {
+    font-family: 'Rajdhani', sans-serif;
+    color: #8888bb;
+    font-size: 1rem;
+    line-height: 1.65;
+    margin-bottom: 2rem;
+}
+
+/* Stats row */
+.hero-stats {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+}
+.stat-item { display: flex; flex-direction: column; align-items: center; }
+.stat-number {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.8rem;
+    font-weight: 900;
+    line-height: 1;
+}
+.stat-label {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: .75rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #55557a;
+    margin-top: 2px;
+}
+.stat-divider {
+    width: 1px;
+    height: 36px;
+    background: rgba(255,255,255,.1);
+}
+
+/* ── Section label ── */
+.section-label {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.section-line {
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(0,245,255,.2), transparent);
+}
+.section-text {
+    font-family: 'Orbitron', sans-serif;
+    font-size: .7rem;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: #55557a;
+    white-space: nowrap;
+}
+
+/* ── Cipher Cards ── */
+.cipher-card {
+    position: relative;
+    border-radius: 14px;
+    border: 1px solid rgba(255,255,255,.08);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    transition: transform .3s ease, border-color .3s ease, box-shadow .3s ease;
+    background: #0b0b1e;
+}
+.cipher-card:hover { transform: translateY(-5px); }
+
+/* Glow overlay on hover */
+.cipher-card-glow {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transition: opacity .35s ease;
+    pointer-events: none;
+    border-radius: 14px;
+}
+.cipher-card:hover .cipher-card-glow { opacity: 1; }
+.glow-bg-cyan   { background: radial-gradient(ellipse at top left, rgba(0,245,255,.08), transparent 65%); }
+.glow-bg-green  { background: radial-gradient(ellipse at top left, rgba(57,255,20,.08), transparent 65%); }
+.glow-bg-pink   { background: radial-gradient(ellipse at top left, rgba(255,45,155,.08), transparent 65%); }
+.glow-bg-yellow { background: radial-gradient(ellipse at top left, rgba(255,224,0,.08), transparent 65%); }
+.glow-bg-purple { background: radial-gradient(ellipse at top left, rgba(191,95,255,.08), transparent 65%); }
+
+/* Border accent on hover */
+.card-caesar:hover   { border-color: rgba(0,245,255,.45);   box-shadow: 0 8px 32px rgba(0,245,255,.12); }
+.card-vigenere:hover { border-color: rgba(57,255,20,.45);   box-shadow: 0 8px 32px rgba(57,255,20,.12); }
+.card-affine:hover   { border-color: rgba(255,45,155,.45);  box-shadow: 0 8px 32px rgba(255,45,155,.12); }
+.card-hill:hover     { border-color: rgba(255,224,0,.45);   box-shadow: 0 8px 32px rgba(255,224,0,.12); }
+.card-playfair:hover { border-color: rgba(191,95,255,.45);  box-shadow: 0 8px 32px rgba(191,95,255,.12); }
+
+/* Top accent bar */
+.cipher-card::before {
+    content: '';
+    display: block;
+    height: 3px;
+    width: 100%;
+}
+.card-caesar::before   { background: linear-gradient(90deg, #00f5ff, transparent); }
+.card-vigenere::before { background: linear-gradient(90deg, #39ff14, transparent); }
+.card-affine::before   { background: linear-gradient(90deg, #ff2d9b, transparent); }
+.card-hill::before     { background: linear-gradient(90deg, #ffe000, transparent); }
+.card-playfair::before { background: linear-gradient(90deg, #bf5fff, transparent); }
+
+.cipher-card-body {
+    padding: 1.4rem 1.5rem 1rem;
+    flex: 1;
+    position: relative;
+    z-index: 1;
+}
+
+/* Icon */
+.cipher-icon-wrap {
+    width: 48px; height: 48px;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.2rem;
+    margin-bottom: 1rem;
+}
+.icon-wrap-cyan   { background: rgba(0,245,255,.12); color: #00f5ff; box-shadow: 0 0 14px rgba(0,245,255,.2); }
+.icon-wrap-green  { background: rgba(57,255,20,.12);  color: #39ff14; box-shadow: 0 0 14px rgba(57,255,20,.2); }
+.icon-wrap-pink   { background: rgba(255,45,155,.12); color: #ff2d9b; box-shadow: 0 0 14px rgba(255,45,155,.2); }
+.icon-wrap-yellow { background: rgba(255,224,0,.12);  color: #ffe000; box-shadow: 0 0 14px rgba(255,224,0,.2); }
+.icon-wrap-purple { background: rgba(191,95,255,.12); color: #bf5fff; box-shadow: 0 0 14px rgba(191,95,255,.2); }
+
+/* Tag */
+.cipher-tag {
+    display: inline-block;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: .68rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 2px 9px;
+    border-radius: 4px;
+    margin-bottom: .55rem;
+}
+.tag-cyan   { background: rgba(0,245,255,.1);   color: #00f5ff; border: 1px solid rgba(0,245,255,.25); }
+.tag-green  { background: rgba(57,255,20,.1);   color: #39ff14; border: 1px solid rgba(57,255,20,.25); }
+.tag-pink   { background: rgba(255,45,155,.1);  color: #ff2d9b; border: 1px solid rgba(255,45,155,.25); }
+.tag-yellow { background: rgba(255,224,0,.1);   color: #ffe000; border: 1px solid rgba(255,224,0,.25); }
+.tag-purple { background: rgba(191,95,255,.1);  color: #bf5fff; border: 1px solid rgba(191,95,255,.25); }
+
+/* Name */
+.cipher-name {
+    font-family: 'Orbitron', sans-serif;
+    font-size: .95rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: #e0e0ff;
+    margin-bottom: .5rem;
+}
+
+/* Desc */
+.cipher-desc {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: .9rem;
+    color: #7777a0;
+    line-height: 1.6;
+    margin-bottom: .85rem;
+}
+
+/* Formula chip */
+.cipher-formula {
+    margin-bottom: .5rem;
+}
+.cipher-formula code {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: .8rem;
+    background: rgba(255,255,255,.06);
+    border: 1px solid rgba(255,255,255,.1);
+    border-radius: 6px;
+    padding: 4px 10px;
+    color: #ffcc66;
+    letter-spacing: .5px;
+}
+
+/* Button */
+.cipher-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Orbitron', sans-serif;
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    text-decoration: none;
+    padding: .8rem 1.5rem;
+    border-top: 1px solid rgba(255,255,255,.07);
+    transition: all .25s ease;
+    position: relative;
+    z-index: 1;
+}
+.cipher-btn .arrow-icon { transition: transform .25s ease; }
+.cipher-btn:hover .arrow-icon { transform: translateX(4px); }
+
+.btn-cyan   { color: #00f5ff; background: rgba(0,245,255,.06); }
+.btn-cyan:hover   { background: rgba(0,245,255,.16); box-shadow: inset 0 0 20px rgba(0,245,255,.08); }
+.btn-green  { color: #39ff14; background: rgba(57,255,20,.06); }
+.btn-green:hover  { background: rgba(57,255,20,.16); box-shadow: inset 0 0 20px rgba(57,255,20,.08); }
+.btn-pink   { color: #ff2d9b; background: rgba(255,45,155,.06); }
+.btn-pink:hover   { background: rgba(255,45,155,.16); box-shadow: inset 0 0 20px rgba(255,45,155,.08); }
+.btn-yellow { color: #ffe000; background: rgba(255,224,0,.06); }
+.btn-yellow:hover { background: rgba(255,224,0,.16); box-shadow: inset 0 0 20px rgba(255,224,0,.08); }
+.btn-purple { color: #bf5fff; background: rgba(191,95,255,.06); }
+.btn-purple:hover { background: rgba(191,95,255,.16); box-shadow: inset 0 0 20px rgba(191,95,255,.08); }
+
+/* ── Info cards (bottom row) ── */
+.info-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    background: #0b0b1e;
+    border: 1px solid rgba(255,255,255,.07);
+    border-radius: 12px;
+    padding: 1.1rem 1.25rem;
+    height: 100%;
+    transition: border-color .25s ease;
+}
+.info-card:hover { border-color: rgba(255,255,255,.15); }
+.info-icon { font-size: 1.3rem; margin-top: 2px; flex-shrink: 0; }
+.info-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: .72rem;
+    letter-spacing: 1.5px;
+    font-weight: 700;
+    color: #ccccee;
+    margin-bottom: .3rem;
+    text-transform: uppercase;
+}
+.info-body {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: .88rem;
+    color: #66667a;
+    line-height: 1.55;
+}
+.info-body a { text-decoration: none; font-weight: 600; }
+.info-body a:hover { text-decoration: underline; }
+
+/* Light mode tweaks */
+[data-bs-theme="light"] .cipher-card,
+[data-bs-theme="light"] .info-card { background: #ffffff; border-color: rgba(0,0,0,.08); }
+[data-bs-theme="light"] .hero-banner { background: linear-gradient(135deg,#0d0d2b,#1a0533,#0a1628); }
+[data-bs-theme="light"] .cipher-name { color: #0d0d2b; }
+[data-bs-theme="light"] .cipher-desc { color: #555577; }
+</style>
+{% endblock %}

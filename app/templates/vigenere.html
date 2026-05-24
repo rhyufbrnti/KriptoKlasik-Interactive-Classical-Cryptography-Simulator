@@ -1,0 +1,521 @@
+{% extends 'base.html' %}
+
+{% block title %}Vigenère Cipher{% endblock %}
+
+{% block content %}
+
+<!-- ── Page Header ── -->
+<div class="page-header mb-4">
+    <div class="page-header-left">
+        <div class="page-breadcrumb">
+            <a href="{{ url_for('index') }}" class="breadcrumb-link">Dashboard</a>
+            <i class="fa-solid fa-chevron-right breadcrumb-sep"></i>
+            <span class="breadcrumb-current">Vigenère Cipher</span>
+        </div>
+        <h1 class="page-title title-vigenere">
+            <i class="fa-solid fa-key me-3"></i>Vigenère Cipher
+        </h1>
+        <p class="page-desc">
+            Sandi substitusi polialfabetik. Menggeser huruf pada teks asli menggunakan deretan huruf dari kata kunci (key) yang diulang.
+        </p>
+    </div>
+    <!-- Formula badge -->
+    <div class="formula-badge badge-vigenere-color d-none d-md-flex">
+        <div class="formula-label">Rumus Enkripsi</div>
+        <div class="formula-main"><code>C = (P + K) mod 26</code></div>
+        <div class="formula-label mt-1">Rumus Dekripsi</div>
+        <div class="formula-main"><code>P = (C − K + 26) mod 26</code></div>
+    </div>
+</div>
+
+<!-- ── Main Grid ── -->
+<div class="row g-4">
+
+    <!-- ════ LEFT: Config Panel ════ -->
+    <div class="col-lg-4">
+        <div class="config-panel panel-vigenere">
+
+            <!-- Header -->
+            <div class="config-panel-header header-vigenere">
+                <i class="fa-solid fa-sliders"></i>
+                <span>Konfigurasi</span>
+                <div class="header-dot dot-vigenere ms-auto"></div>
+            </div>
+
+            <!-- Body / Form -->
+            <div class="config-panel-body">
+                <form method="POST" action="{{ url_for('vigenere.index') }}">
+
+                    <!-- Text Input -->
+                    <div class="field-group mb-3">
+                        <label class="field-label">
+                            <i class="fa-solid fa-align-left me-2"></i>Teks Input
+                        </label>
+                        <textarea class="game-input"
+                                  name="text"
+                                  rows="4"
+                                  placeholder="Masukkan pesan di sini...">{{ text_input }}</textarea>
+                    </div>
+
+                    <!-- Key Input -->
+                    <div class="field-group mb-3">
+                        <label class="field-label">
+                            <i class="fa-solid fa-spell-check me-2"></i>Kata Kunci (Key)
+                        </label>
+                        <input type="text"
+                               class="game-input text-uppercase"
+                               name="key"
+                               value="{{ key_input }}"
+                               pattern="[A-Za-z]+"
+                               placeholder="Contoh: KUNCI"
+                               title="Hanya gunakan huruf alfabet tanpa spasi"
+                               required>
+                        <div class="field-hint">Hanya alfabet. Diulang otomatis.</div>
+                    </div>
+
+                    <!-- Mode -->
+                    <div class="field-group mb-4">
+                        <label class="field-label">
+                            <i class="fa-solid fa-code-branch me-2"></i>Mode Operasi
+                        </label>
+                        <div class="mode-toggle">
+                            <label class="mode-option {% if mode == 'encrypt' %}mode-active-vigenere{% endif %}">
+                                <input type="radio" name="mode" value="encrypt"
+                                       {% if mode == 'encrypt' %}checked{% endif %} hidden>
+                                <i class="fa-solid fa-lock me-1"></i> Enkripsi
+                            </label>
+                            <label class="mode-option {% if mode == 'decrypt' %}mode-active-vigenere{% endif %}">
+                                <input type="radio" name="mode" value="decrypt"
+                                       {% if mode == 'decrypt' %}checked{% endif %} hidden>
+                                <i class="fa-solid fa-lock-open me-1"></i> Dekripsi
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Submit -->
+                    <button type="submit" class="btn-run btn-run-vigenere">
+                        <i class="fa-solid fa-bolt me-2"></i>
+                        Proses Vigenère
+                        <span class="btn-run-arrow">→</span>
+                    </button>
+
+                </form>
+            </div>
+        </div><!-- /config-panel -->
+
+        <!-- Info box below form -->
+        <div class="info-aside mt-3">
+            <div class="info-aside-title">
+                <i class="fa-solid fa-circle-info me-2" style="color:#00ff88;"></i>Cara Kerja
+            </div>
+            <p>Huruf pada <em>kata kunci</em> dikonversi menjadi angka (A=0, B=1, ... Z=25). Angka ini menentukan jumlah pergeseran untuk huruf teks yang bersesuaian.</p>
+            <p class="mb-0">Karakter spasi dan tanda baca tidak akan menggeser siklus kunci.</p>
+        </div>
+    </div><!-- /col-lg-4 -->
+
+    <!-- ════ RIGHT: Result + Steps ════ -->
+    <div class="col-lg-8">
+
+        {% if result_text %}
+
+        <!-- ── Result Box ── -->
+        <div class="result-panel panel-vigenere mb-4">
+            <div class="result-panel-header header-vigenere-result">
+                <div class="result-status-dot"></div>
+                <span>Hasil {{ 'Enkripsi' if mode == 'encrypt' else 'Dekripsi' }}</span>
+                <div class="result-meta ms-auto">
+                    <span class="meta-chip">key = {{ key_input | upper }}</span>
+                    <span class="meta-chip chip-mode">{{ 'ENCRYPT' if mode == 'encrypt' else 'DECRYPT' }}</span>
+                </div>
+            </div>
+
+            <!-- Input row -->
+            <div class="result-row">
+                <div class="result-row-label">INPUT</div>
+                <div class="result-value value-muted">{{ text_input }}</div>
+            </div>
+
+            <!-- Output row -->
+            <div class="result-row result-row-output">
+                <div class="result-row-label label-vigenere">OUTPUT</div>
+                <div class="result-value value-vigenere">{{ result_text }}</div>
+            </div>
+
+            <!-- Copy button -->
+            <div class="result-actions">
+                <button class="btn-copy" onclick="copyResult('{{ result_text }}')">
+                    <i class="fa-regular fa-copy me-1"></i> Salin Hasil
+                </button>
+                <span class="copy-feedback" id="copy-feedback"></span>
+            </div>
+        </div>
+
+        <!-- ── Steps Table ── -->
+        <div class="steps-panel">
+
+            <div class="steps-panel-header">
+                <i class="fa-solid fa-list-ol me-2" style="color:#00ff88;"></i>
+                <span>Langkah Perhitungan Per Karakter</span>
+                <span class="steps-count ms-auto">{{ steps|length }} karakter</span>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table-steps">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Input</th>
+                            <th>Key</th>
+                            <th>Output</th>
+                            <th>Rumus Matematis</th>
+                            <th>Penjelasan</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for step in steps %}
+                        <tr class="{% if step.is_alpha %}row-alpha{% else %}row-skip{% endif %}">
+                            <td class="col-idx">{{ loop.index }}</td>
+                            <td><span class="char-box char-input">{{ step.original }}</span></td>
+                            <td>
+                                {% if step.is_alpha %}
+                                    <span class="char-box char-key-box">{{ step.key_char }}</span>
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="char-box char-vigenere">{{ step.result }}</span>
+                            </td>
+                            <td>
+                                {% if step.is_alpha %}
+                                    <code class="formula-code">{{ step.formula }}</code>
+                                {% else %}
+                                    <span class="skip-badge">skip</span>
+                                {% endif %}
+                            </td>
+                            <td class="col-explain">{{ step.explanation }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div><!-- /steps-panel -->
+
+        {% else %}
+
+        <!-- ── Empty State ── -->
+        <div class="empty-state">
+            <div class="empty-icon"><i class="fa-solid fa-key"></i></div>
+            <div class="empty-title">Siap Digunakan</div>
+            <div class="empty-desc">
+                Isi teks dan kata kunci (key) di panel kiri,<br>
+                lalu klik <strong>Proses Vigenère</strong> untuk melihat simulasi.
+            </div>
+            <div class="empty-example">
+                <span class="ex-label">Contoh:</span>
+                <span class="ex-plain">HELLO</span>
+                <i class="fa-solid fa-arrow-right mx-2" style="color:#444;"></i>
+                <span class="ex-cipher" style="color:#00ff88;">RIJVS</span>
+                <span class="ex-note">(key = KEY)</span>
+            </div>
+        </div>
+
+        {% endif %}
+
+    </div><!-- /col-lg-8 -->
+</div><!-- /row -->
+
+{% endblock %}
+
+{% block extra_js %}
+<style>
+/* ════════════════════════════════════════
+   VIGENERE PAGE — SCOPED STYLES (NEON GREEN THEME)
+════════════════════════════════════════ */
+
+/* ── Page Header ── */
+.page-header {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    gap: 1.5rem; flex-wrap: wrap;
+}
+.page-breadcrumb {
+    display: flex; align-items: center; gap: 6px;
+    font-family: 'Rajdhani', sans-serif; font-size: .78rem; letter-spacing: 1px;
+    margin-bottom: .5rem;
+}
+.breadcrumb-link { color: #44447a; text-decoration: none; }
+.breadcrumb-link:hover { color: #00ff88; }
+.breadcrumb-sep { color: #33335a; font-size: .6rem; }
+.breadcrumb-current { color: #00ff88; }
+
+.page-title {
+    font-family: 'Orbitron', sans-serif; font-size: clamp(1.2rem,3vw,1.7rem);
+    font-weight: 900; letter-spacing: 2px; margin-bottom: .4rem;
+}
+.title-vigenere { color: #00ff88; text-shadow: 0 0 18px rgba(0,255,136,.45); }
+
+.page-desc {
+    font-family: 'Rajdhani', sans-serif; color: #66667a; font-size: .92rem; max-width: 480px;
+}
+
+/* Formula badge */
+.formula-badge {
+    display: flex; flex-direction: column;
+    background: rgba(0,255,136,.05); border: 1px solid rgba(0,255,136,.2);
+    border-radius: 12px; padding: .9rem 1.25rem; gap: 2px; min-width: 220px;
+}
+.badge-vigenere-color { border-color: rgba(0,255,136,.2); }
+.formula-label {
+    font-family: 'Orbitron', sans-serif; font-size: .6rem; letter-spacing: 2px;
+    color: #44447a; text-transform: uppercase;
+}
+.formula-main code {
+    font-family: 'Share Tech Mono', monospace; font-size: .88rem;
+    color: #00ff88; background: none; padding: 0;
+}
+
+/* ── Config Panel ── */
+.config-panel {
+    background: #0b0b1e; border-radius: 12px;
+    border: 1px solid rgba(255,255,255,.08); overflow: hidden;
+}
+.panel-vigenere { border-top: 2px solid #00ff88; }
+
+.config-panel-header {
+    display: flex; align-items: center; gap: 8px; padding: .75rem 1.2rem;
+    font-family: 'Orbitron', sans-serif; font-size: .7rem; font-weight: 700;
+    letter-spacing: 2.5px; text-transform: uppercase;
+}
+.header-vigenere { background: rgba(0,255,136,.07); color: #00ff88; border-bottom: 1px solid rgba(0,255,136,.15); }
+
+.header-dot {
+    width: 8px; height: 8px; border-radius: 50%; animation: pulse-dot 2s infinite;
+}
+.dot-vigenere { background: #00ff88; box-shadow: 0 0 6px #00ff88; }
+@keyframes pulse-dot {
+    0%,100% { opacity: 1; transform: scale(1); }
+    50%      { opacity: .4; transform: scale(.7); }
+}
+
+.config-panel-body { padding: 1.25rem; }
+
+/* Form fields */
+.field-label {
+    font-family: 'Rajdhani', sans-serif; font-size: .78rem; font-weight: 700;
+    letter-spacing: 2px; text-transform: uppercase; color: #55557a;
+    display: block; margin-bottom: .4rem;
+}
+.game-input {
+    width: 100%; background: #06060f; border: 1px solid rgba(255,255,255,.1);
+    border-radius: 8px; color: #e0e0ff; font-family: 'Rajdhani', sans-serif;
+    font-size: .95rem; padding: .55rem .85rem; resize: vertical;
+    transition: border-color .2s, box-shadow .2s; outline: none;
+}
+.game-input:focus {
+    border-color: #00ff88; box-shadow: 0 0 0 3px rgba(0,255,136,.12);
+}
+.game-input::placeholder { color: #333355; }
+.field-hint {
+    font-family: 'Rajdhani', sans-serif; font-size: .75rem; color: #33335a; margin-top: .3rem;
+}
+
+/* Mode toggle */
+.mode-toggle { display: flex; gap: 8px; }
+.mode-option {
+    flex: 1; display: flex; align-items: center; justify-content: center;
+    font-family: 'Rajdhani', sans-serif; font-size: .85rem; font-weight: 700;
+    letter-spacing: 1px; padding: .55rem; border-radius: 8px;
+    border: 1px solid rgba(255,255,255,.1); background: #06060f; color: #55557a;
+    cursor: pointer; transition: all .2s;
+}
+.mode-option:hover { border-color: rgba(0,255,136,.3); color: #00ff88; }
+.mode-active-vigenere { border-color: #00ff88 !important; color: #00ff88 !important; background: rgba(0,255,136,.1) !important; }
+
+/* Run button */
+.btn-run {
+    width: 100%; display: flex; align-items: center; justify-content: center; gap: 4px;
+    font-family: 'Orbitron', sans-serif; font-size: .75rem; font-weight: 700;
+    letter-spacing: 2.5px; text-transform: uppercase; padding: .75rem;
+    border-radius: 8px; border: none; cursor: pointer; transition: all .25s;
+    position: relative; overflow: hidden;
+}
+.btn-run-arrow { margin-left: auto; transition: transform .25s; }
+.btn-run:hover .btn-run-arrow { transform: translateX(4px); }
+.btn-run-vigenere {
+    background: rgba(0,255,136,.12); color: #00ff88; border: 1px solid rgba(0,255,136,.3);
+}
+.btn-run-vigenere:hover {
+    background: rgba(0,255,136,.22); box-shadow: 0 0 20px rgba(0,255,136,.2);
+}
+
+/* Info aside */
+.info-aside {
+    background: #0b0b1e; border: 1px solid rgba(255,255,255,.07);
+    border-left: 3px solid #00ff88; border-radius: 10px; padding: 1rem 1.15rem;
+}
+.info-aside-title {
+    font-family: 'Orbitron', sans-serif; font-size: .68rem; letter-spacing: 2px;
+    text-transform: uppercase; color: #aaaacc; margin-bottom: .6rem;
+}
+.info-aside p {
+    font-family: 'Rajdhani', sans-serif; font-size: .88rem; color: #66667a;
+    line-height: 1.6; margin-bottom: .4rem;
+}
+
+/* ── Result Panel ── */
+.result-panel {
+    background: #0b0b1e; border-radius: 12px; border: 1px solid rgba(255,255,255,.08); overflow: hidden;
+}
+.panel-vigenere { border-top: 2px solid #00ff88; }
+
+.result-panel-header {
+    display: flex; align-items: center; gap: 8px; padding: .7rem 1.2rem;
+    font-family: 'Orbitron', sans-serif; font-size: .7rem; font-weight: 700;
+    letter-spacing: 2px; text-transform: uppercase;
+}
+.header-vigenere-result { background: rgba(0,255,136,.08); color: #00ff88; border-bottom: 1px solid rgba(0,255,136,.12); }
+
+.result-status-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: #00ff88; box-shadow: 0 0 8px #00ff88; animation: pulse-dot 1.5s infinite;
+}
+
+/* Meta chips */
+.meta-chip {
+    font-family: 'Share Tech Mono', monospace; font-size: .68rem;
+    background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.1);
+    border-radius: 4px; padding: 2px 8px; color: #8888aa; margin-left: 6px;
+}
+.chip-mode { color: #00ff88; border-color: rgba(0,255,136,.25); background: rgba(0,255,136,.08); }
+
+/* Result rows */
+.result-row {
+    display: flex; align-items: flex-start; gap: 12px; padding: .85rem 1.2rem;
+    border-bottom: 1px solid rgba(255,255,255,.05);
+}
+.result-row-output { background: rgba(0,255,136,.03); }
+
+.result-row-label {
+    font-family: 'Orbitron', sans-serif; font-size: .6rem; font-weight: 700;
+    letter-spacing: 2px; text-transform: uppercase; color: #33335a; min-width: 52px; padding-top: 3px;
+}
+.label-vigenere { color: #00ff88; }
+
+.result-value {
+    font-family: 'Share Tech Mono', monospace; font-size: 1.05rem;
+    word-break: break-all; line-height: 1.7; letter-spacing: 2px;
+}
+.value-muted  { color: #44445a; }
+.value-vigenere { color: #00ff88; text-shadow: 0 0 8px rgba(0,255,136,.35); }
+
+.result-actions { padding: .6rem 1.2rem; display: flex; align-items: center; gap: 10px; }
+.btn-copy {
+    font-family: 'Rajdhani', sans-serif; font-size: .8rem; font-weight: 700;
+    letter-spacing: 1px; background: rgba(0,255,136,.08); border: 1px solid rgba(0,255,136,.25);
+    border-radius: 6px; color: #00ff88; padding: 4px 14px; cursor: pointer; transition: all .2s;
+}
+.btn-copy:hover { background: rgba(0,255,136,.18); }
+.copy-feedback { font-family: 'Rajdhani', sans-serif; font-size: .8rem; color: #39ff14; }
+
+/* ── Steps Panel ── */
+.steps-panel {
+    background: #0b0b1e; border-radius: 12px; border: 1px solid rgba(255,255,255,.08); overflow: hidden;
+}
+.steps-panel-header {
+    display: flex; align-items: center; padding: .75rem 1.2rem;
+    font-family: 'Orbitron', sans-serif; font-size: .7rem; font-weight: 700;
+    letter-spacing: 2px; text-transform: uppercase; color: #8888bb;
+    background: rgba(255,255,255,.03); border-bottom: 1px solid rgba(255,255,255,.07);
+}
+.steps-count { font-family: 'Share Tech Mono', monospace; font-size: .7rem; color: #44447a; }
+
+/* Table */
+.table-steps { width: 100%; border-collapse: collapse; font-family: 'Rajdhani', sans-serif; font-size: .9rem; }
+.table-steps thead th {
+    padding: .6rem 1rem; font-family: 'Orbitron', sans-serif; font-size: .62rem; font-weight: 700;
+    letter-spacing: 2px; text-transform: uppercase; color: #44447a;
+    background: rgba(255,255,255,.03); border-bottom: 1px solid rgba(255,255,255,.08);
+    text-align: center; white-space: nowrap;
+}
+.table-steps tbody tr { border-bottom: 1px solid rgba(255,255,255,.04); transition: background .15s; }
+.table-steps tbody tr:hover { background: rgba(255,255,255,.03); }
+.table-steps tbody tr.row-skip { opacity: .55; }
+.table-steps td { padding: .55rem 1rem; text-align: center; vertical-align: middle; color: #aaaacc; }
+.col-idx { color: #33335a; font-family: 'Share Tech Mono', monospace; font-size: .8rem; }
+.col-explain { text-align: left; color: #55557a; font-size: .82rem; min-width: 180px; }
+
+/* Char boxes */
+.char-box {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 32px; height: 32px; border-radius: 6px;
+    font-family: 'Share Tech Mono', monospace; font-size: 1rem; font-weight: 700;
+}
+.char-input  { background: rgba(255,255,255,.07); color: #ccccee; border: 1px solid rgba(255,255,255,.12); }
+.char-key-box { background: rgba(255,255,255,.15); color: #ffffff; border: 1px solid rgba(255,255,255,.3); }
+.char-vigenere { background: rgba(0,255,136,.1); color: #00ff88; border: 1px solid rgba(0,255,136,.25); }
+
+.formula-code {
+    font-family: 'Share Tech Mono', monospace; font-size: .78rem;
+    background: rgba(255,204,102,.08); color: #ffcc66; border: 1px solid rgba(255,204,102,.15);
+    border-radius: 4px; padding: 2px 7px; white-space: nowrap;
+}
+.skip-badge {
+    font-family: 'Orbitron', sans-serif; font-size: .6rem; letter-spacing: 1px;
+    background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1);
+    border-radius: 4px; color: #333355; padding: 2px 8px;
+}
+
+/* ── Empty State ── */
+.empty-state {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    min-height: 340px; background: #0b0b1e; border: 1px dashed rgba(0,255,136,.2);
+    border-radius: 12px; padding: 2.5rem; text-align: center;
+}
+.empty-icon { font-size: 2.5rem; color: rgba(0,255,136,.2); margin-bottom: 1rem; }
+.empty-title {
+    font-family: 'Orbitron', sans-serif; font-size: .9rem; letter-spacing: 2px;
+    color: #33335a; margin-bottom: .5rem; text-transform: uppercase;
+}
+.empty-desc {
+    font-family: 'Rajdhani', sans-serif; color: #44446a; font-size: .9rem;
+    line-height: 1.65; margin-bottom: 1.5rem;
+}
+.empty-example {
+    display: flex; align-items: center; flex-wrap: wrap; justify-content: center; gap: 4px;
+    font-family: 'Share Tech Mono', monospace; font-size: .85rem;
+    background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.08);
+    border-radius: 8px; padding: .6rem 1.2rem;
+}
+.ex-label { color: #44447a; font-size: .7rem; letter-spacing: 1px; }
+.ex-plain { color: #ccccee; }
+.ex-note  { color: #44447a; font-size: .75rem; }
+
+/* Light mode */
+[data-bs-theme="light"] .config-panel,
+[data-bs-theme="light"] .result-panel,
+[data-bs-theme="light"] .steps-panel,
+[data-bs-theme="light"] .info-aside,
+[data-bs-theme="light"] .empty-state { background: #ffffff; border-color: rgba(0,0,0,.08); }
+[data-bs-theme="light"] .game-input  { background: #f5f7ff; color: #0d0d2b; border-color: rgba(0,0,0,.12); }
+[data-bs-theme="light"] .col-explain,
+[data-bs-theme="light"] .page-desc { color: #555577; }
+</style>
+
+<script>
+document.querySelectorAll('.mode-option input[type=radio]').forEach(radio => {
+    radio.addEventListener('change', () => {
+        document.querySelectorAll('.mode-option').forEach(el => {
+            el.classList.remove('mode-active-vigenere');
+        });
+        if (radio.checked) radio.closest('.mode-option').classList.add('mode-active-vigenere');
+    });
+});
+
+function copyResult(text) {
+    navigator.clipboard.writeText(text).then(() => {
+        const fb = document.getElementById('copy-feedback');
+        if (fb) { fb.textContent = '✓ Tersalin!'; setTimeout(() => fb.textContent = '', 2000); }
+    });
+}
+</script>
+{% endblock %}

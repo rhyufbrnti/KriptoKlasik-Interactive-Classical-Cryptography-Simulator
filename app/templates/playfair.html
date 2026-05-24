@@ -1,0 +1,564 @@
+{% extends 'base.html' %}
+
+{% block title %}Playfair Cipher{% endblock %}
+
+{% block content %}
+
+<!-- ── Page Header ── -->
+<div class="page-header mb-4">
+    <div class="page-header-left">
+        <div class="page-breadcrumb">
+            <a href="{{ url_for('index') }}" class="breadcrumb-link">Dashboard</a>
+            <i class="fa-solid fa-chevron-right breadcrumb-sep"></i>
+            <span class="breadcrumb-current">Playfair Cipher</span>
+        </div>
+        <h1 class="page-title title-playfair">
+            <i class="fa-solid fa-chess-board me-3"></i>Playfair Cipher
+        </h1>
+        <p class="page-desc">
+            Algoritma kriptografi klasik yang mengenkripsi pasangan huruf (digraph) menggunakan matriks 5x5. Huruf 'J' otomatis dilebur menjadi 'I'.
+        </p>
+    </div>
+    <!-- Formula badge -->
+    <div class="formula-badge badge-playfair-color d-none d-md-flex">
+        <div class="formula-label">Aturan Digraph (Enkripsi)</div>
+        <div class="formula-main" style="font-size: .75rem; font-family: 'Rajdhani', sans-serif;">
+            <span class="text-light">Baris sama:</span> Geser Kanan<br>
+            <span class="text-light">Kolom sama:</span> Geser Bawah<br>
+            <span class="text-light">Persegi:</span> Tukar Kolom
+        </div>
+    </div>
+</div>
+
+<!-- ── Main Grid ── -->
+<div class="row g-4">
+
+    <!-- ════ LEFT: Config Panel ════ -->
+    <div class="col-lg-4">
+        <div class="config-panel panel-playfair">
+
+            <!-- Header -->
+            <div class="config-panel-header header-playfair">
+                <i class="fa-solid fa-sliders"></i>
+                <span>Konfigurasi</span>
+                <div class="header-dot dot-playfair ms-auto"></div>
+            </div>
+
+            <!-- Body / Form -->
+            <div class="config-panel-body">
+                <form method="POST" action="{{ url_for('playfair.index') }}">
+
+                    <!-- Text Input -->
+                    <div class="field-group mb-3">
+                        <label class="field-label">
+                            <i class="fa-solid fa-align-left me-2"></i>Teks Input
+                        </label>
+                        <textarea class="game-input"
+                                  name="text"
+                                  rows="4"
+                                  placeholder="Masukkan pesan di sini..." required>{{ text_input }}</textarea>
+                    </div>
+
+                    <!-- Key Input -->
+                    <div class="field-group mb-3">
+                        <label class="field-label">
+                            <i class="fa-solid fa-spell-check me-2"></i>Kata Kunci (Key)
+                        </label>
+                        <input type="text"
+                               class="game-input text-uppercase"
+                               name="key"
+                               value="{{ key_input }}"
+                               pattern="[A-Za-z]+"
+                               title="Hanya huruf tanpa spasi" required>
+                        <div class="field-hint">Membentuk matriks 5x5. Huruf kembar akan dibuang.</div>
+                    </div>
+
+                    <!-- Mode -->
+                    <div class="field-group mb-4">
+                        <label class="field-label">
+                            <i class="fa-solid fa-code-branch me-2"></i>Mode Operasi
+                        </label>
+                        <div class="mode-toggle">
+                            <label class="mode-option {% if mode == 'encrypt' %}mode-active-playfair{% endif %}">
+                                <input type="radio" name="mode" value="encrypt"
+                                       {% if mode == 'encrypt' %}checked{% endif %} hidden>
+                                <i class="fa-solid fa-lock me-1"></i> Enkripsi
+                            </label>
+                            <label class="mode-option {% if mode == 'decrypt' %}mode-active-playfair{% endif %}">
+                                <input type="radio" name="mode" value="decrypt"
+                                       {% if mode == 'decrypt' %}checked{% endif %} hidden>
+                                <i class="fa-solid fa-lock-open me-1"></i> Dekripsi
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Submit -->
+                    <button type="submit" class="btn-run btn-run-playfair">
+                        <i class="fa-solid fa-bolt me-2"></i>
+                        Proses Playfair
+                        <span class="btn-run-arrow">→</span>
+                    </button>
+
+                </form>
+            </div>
+        </div><!-- /config-panel -->
+
+        <!-- Info box below form -->
+        <div class="info-aside mt-3">
+            <div class="info-aside-title">
+                <i class="fa-solid fa-circle-info me-2" style="color:#cc00ff;"></i>Cara Kerja Pre-processing
+            </div>
+            <p>Semua huruf <strong>J</strong> akan diganti menjadi <strong>I</strong>. Karakter selain huruf akan dihapus.</p>
+            <p class="mb-0">Jika ada huruf berpasangan yang sama (contoh: LL), huruf sisipan <strong>X</strong> akan diletakkan di antaranya (menjadi LX L).</p>
+        </div>
+    </div><!-- /col-lg-4 -->
+
+    <!-- ════ RIGHT: Result + Steps ════ -->
+    <div class="col-lg-8">
+
+        {% if result_text %}
+
+        <!-- ── Result Box ── -->
+        <div class="result-panel panel-playfair mb-4">
+            <div class="result-panel-header header-playfair-result">
+                <div class="result-status-dot"></div>
+                <span>Hasil {{ 'Enkripsi' if mode == 'encrypt' else 'Dekripsi' }}</span>
+                <div class="result-meta ms-auto">
+                    <span class="meta-chip">Key: {{ key_input | upper }}</span>
+                    <span class="meta-chip chip-mode">{{ 'ENCRYPT' if mode == 'encrypt' else 'DECRYPT' }}</span>
+                </div>
+            </div>
+
+            <!-- Input row -->
+            <div class="result-row">
+                <div class="result-row-label">INPUT</div>
+                <div class="result-value value-muted">{{ text_input }}</div>
+            </div>
+
+            <!-- Output row -->
+            <div class="result-row result-row-output">
+                <div class="result-row-label label-playfair">OUTPUT</div>
+                <div class="result-value value-playfair">{{ result_text }}</div>
+            </div>
+
+            <!-- Copy button -->
+            <div class="result-actions">
+                <button class="btn-copy" onclick="copyResult('{{ result_text }}')">
+                    <i class="fa-regular fa-copy me-1"></i> Salin Hasil
+                </button>
+                <span class="copy-feedback" id="copy-feedback"></span>
+            </div>
+        </div>
+
+        <!-- ── Matrix Box ── -->
+        {% if matrix %}
+        <div class="steps-panel mb-4">
+            <div class="steps-panel-header justify-content-center">
+                <i class="fa-solid fa-border-all me-2" style="color:#cc00ff;"></i>
+                <span>Visualisasi Matriks Kunci 5x5</span>
+            </div>
+            <div class="p-4 d-flex justify-content-center" style="background: rgba(0,0,0,0.15);">
+                <div class="playfair-grid">
+                    {% for row in matrix %}
+                        {% for char in row %}
+                            <div class="playfair-cell">{{ char }}</div>
+                        {% endfor %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- ── Steps Table ── -->
+        <div class="steps-panel">
+
+            <div class="steps-panel-header">
+                <i class="fa-solid fa-list-ol me-2" style="color:#cc00ff;"></i>
+                <span>Langkah Aturan Digraph</span>
+                <span class="steps-count ms-auto">{{ steps|length }} Pasang</span>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table-steps">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Digraph Awal</th>
+                            <th>Posisi Matriks</th>
+                            <th>Aturan Diterapkan</th>
+                            <th>Digraph Hasil</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for step in steps %}
+                        <tr>
+                            <td class="col-idx">{{ loop.index }}</td>
+                            
+                            <!-- Input Pair -->
+                            <td>
+                                <span class="char-block char-input">{{ step.pair_in }}</span>
+                            </td>
+                            
+                            <!-- Positions -->
+                            <td>
+                                <div class="pos-text">
+                                    <span class="text-muted">H1:</span> <span class="text-playfair-light">{{ step.pos1 }}</span><br>
+                                    <span class="text-muted">H2:</span> <span class="text-playfair-light">{{ step.pos2 }}</span>
+                                </div>
+                            </td>
+
+                            <!-- Rule -->
+                            <td>
+                                <span class="rule-badge">{{ step.rule }}</span>
+                            </td>
+
+                            <!-- Output Pair -->
+                            <td>
+                                <span class="char-block char-playfair">{{ step.pair_out }}</span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div><!-- /steps-panel -->
+
+        {% else %}
+
+        <!-- ── Empty State ── -->
+        <div class="empty-state">
+            <div class="empty-icon"><i class="fa-solid fa-chess-board"></i></div>
+            <div class="empty-title">Siap Digunakan</div>
+            <div class="empty-desc">
+                Isi teks dan kata kunci di panel kiri,<br>
+                lalu klik <strong>Proses Playfair</strong> untuk melihat simulasi & matriks 5x5.
+            </div>
+            <div class="empty-example">
+                <span class="ex-label">Ingat:</span>
+                <span class="ex-plain">Huruf 'J' akan selalu menjadi 'I'</span>
+            </div>
+        </div>
+
+        {% endif %}
+
+    </div><!-- /col-lg-8 -->
+</div><!-- /row -->
+
+{% endblock %}
+
+{% block extra_js %}
+<style>
+/* ════════════════════════════════════════
+   PLAYFAIR PAGE — SCOPED STYLES (NEON PURPLE)
+════════════════════════════════════════ */
+
+/* ── Page Header ── */
+.page-header {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    gap: 1.5rem; flex-wrap: wrap;
+}
+.page-breadcrumb {
+    display: flex; align-items: center; gap: 6px;
+    font-family: 'Rajdhani', sans-serif; font-size: .78rem; letter-spacing: 1px;
+    margin-bottom: .5rem;
+}
+.breadcrumb-link { color: #44447a; text-decoration: none; }
+.breadcrumb-link:hover { color: #cc00ff; }
+.breadcrumb-sep { color: #33335a; font-size: .6rem; }
+.breadcrumb-current { color: #cc00ff; }
+
+.page-title {
+    font-family: 'Orbitron', sans-serif; font-size: clamp(1.2rem,3vw,1.7rem);
+    font-weight: 900; letter-spacing: 2px; margin-bottom: .4rem;
+}
+.title-playfair { color: #cc00ff; text-shadow: 0 0 18px rgba(204,0,255,.45); }
+
+.page-desc {
+    font-family: 'Rajdhani', sans-serif; color: #66667a; font-size: .92rem; max-width: 480px;
+}
+
+/* Formula badge */
+.formula-badge {
+    display: flex; flex-direction: column;
+    background: rgba(204,0,255,.05); border: 1px solid rgba(204,0,255,.2);
+    border-radius: 12px; padding: .9rem 1.25rem; gap: 2px; min-width: 220px;
+}
+.badge-playfair-color { border-color: rgba(204,0,255,.2); }
+.formula-label {
+    font-family: 'Orbitron', sans-serif; font-size: .6rem; letter-spacing: 2px;
+    color: #44447a; text-transform: uppercase; margin-bottom: 4px;
+}
+
+/* ── Config Panel ── */
+.config-panel {
+    background: #0b0b1e; border-radius: 12px;
+    border: 1px solid rgba(255,255,255,.08); overflow: hidden;
+}
+.panel-playfair { border-top: 2px solid #cc00ff; }
+
+.config-panel-header {
+    display: flex; align-items: center; gap: 8px; padding: .75rem 1.2rem;
+    font-family: 'Orbitron', sans-serif; font-size: .7rem; font-weight: 700;
+    letter-spacing: 2.5px; text-transform: uppercase;
+}
+.header-playfair { background: rgba(204,0,255,.07); color: #cc00ff; border-bottom: 1px solid rgba(204,0,255,.15); }
+
+.header-dot {
+    width: 8px; height: 8px; border-radius: 50%; animation: pulse-dot 2s infinite;
+}
+.dot-playfair { background: #cc00ff; box-shadow: 0 0 6px #cc00ff; }
+@keyframes pulse-dot {
+    0%,100% { opacity: 1; transform: scale(1); }
+    50%      { opacity: .4; transform: scale(.7); }
+}
+
+.config-panel-body { padding: 1.25rem; }
+
+/* Form fields */
+.field-label {
+    font-family: 'Rajdhani', sans-serif; font-size: .78rem; font-weight: 700;
+    letter-spacing: 2px; text-transform: uppercase; color: #55557a;
+    display: block; margin-bottom: .4rem;
+}
+.game-input {
+    width: 100%; background: #06060f; border: 1px solid rgba(255,255,255,.1);
+    border-radius: 8px; color: #e0e0ff; font-family: 'Rajdhani', sans-serif;
+    font-size: .95rem; padding: .55rem .85rem; resize: vertical;
+    transition: border-color .2s, box-shadow .2s; outline: none;
+}
+.game-input:focus {
+    border-color: #cc00ff; box-shadow: 0 0 0 3px rgba(204,0,255,.12);
+}
+.game-input::placeholder { color: #333355; }
+.field-hint {
+    font-family: 'Rajdhani', sans-serif; font-size: .75rem; color: #33335a; margin-top: .3rem;
+}
+
+/* Mode toggle */
+.mode-toggle { display: flex; gap: 8px; }
+.mode-option {
+    flex: 1; display: flex; align-items: center; justify-content: center;
+    font-family: 'Rajdhani', sans-serif; font-size: .85rem; font-weight: 700;
+    letter-spacing: 1px; padding: .55rem; border-radius: 8px;
+    border: 1px solid rgba(255,255,255,.1); background: #06060f; color: #55557a;
+    cursor: pointer; transition: all .2s;
+}
+.mode-option:hover { border-color: rgba(204,0,255,.3); color: #cc00ff; }
+.mode-active-playfair { border-color: #cc00ff !important; color: #cc00ff !important; background: rgba(204,0,255,.1) !important; }
+
+/* Run button */
+.btn-run {
+    width: 100%; display: flex; align-items: center; justify-content: center; gap: 4px;
+    font-family: 'Orbitron', sans-serif; font-size: .75rem; font-weight: 700;
+    letter-spacing: 2.5px; text-transform: uppercase; padding: .75rem;
+    border-radius: 8px; border: none; cursor: pointer; transition: all .25s;
+    position: relative; overflow: hidden;
+}
+.btn-run-arrow { margin-left: auto; transition: transform .25s; }
+.btn-run:hover .btn-run-arrow { transform: translateX(4px); }
+.btn-run-playfair {
+    background: rgba(204,0,255,.12); color: #cc00ff; border: 1px solid rgba(204,0,255,.3);
+}
+.btn-run-playfair:hover {
+    background: rgba(204,0,255,.22); box-shadow: 0 0 20px rgba(204,0,255,.2);
+}
+
+/* Info aside */
+.info-aside {
+    background: #0b0b1e; border: 1px solid rgba(255,255,255,.07);
+    border-left: 3px solid #cc00ff; border-radius: 10px; padding: 1rem 1.15rem;
+}
+.info-aside-title {
+    font-family: 'Orbitron', sans-serif; font-size: .68rem; letter-spacing: 2px;
+    text-transform: uppercase; color: #aaaacc; margin-bottom: .6rem;
+}
+.info-aside p {
+    font-family: 'Rajdhani', sans-serif; font-size: .88rem; color: #66667a;
+    line-height: 1.6; margin-bottom: .4rem;
+}
+
+/* ── Result Panel ── */
+.result-panel {
+    background: #0b0b1e; border-radius: 12px; border: 1px solid rgba(255,255,255,.08); overflow: hidden;
+}
+.panel-playfair { border-top: 2px solid #cc00ff; }
+
+.result-panel-header {
+    display: flex; align-items: center; gap: 8px; padding: .7rem 1.2rem;
+    font-family: 'Orbitron', sans-serif; font-size: .7rem; font-weight: 700;
+    letter-spacing: 2px; text-transform: uppercase;
+}
+.header-playfair-result { background: rgba(204,0,255,.08); color: #cc00ff; border-bottom: 1px solid rgba(204,0,255,.12); }
+
+.result-status-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: #cc00ff; box-shadow: 0 0 8px #cc00ff; animation: pulse-dot 1.5s infinite;
+}
+
+/* Meta chips */
+.meta-chip {
+    font-family: 'Share Tech Mono', monospace; font-size: .68rem;
+    background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.1);
+    border-radius: 4px; padding: 2px 8px; color: #8888aa; margin-left: 6px;
+}
+.chip-mode { color: #cc00ff; border-color: rgba(204,0,255,.25); background: rgba(204,0,255,.08); }
+
+/* Result rows */
+.result-row {
+    display: flex; align-items: flex-start; gap: 12px; padding: .85rem 1.2rem;
+    border-bottom: 1px solid rgba(255,255,255,.05);
+}
+.result-row-output { background: rgba(204,0,255,.03); }
+
+.result-row-label {
+    font-family: 'Orbitron', sans-serif; font-size: .6rem; font-weight: 700;
+    letter-spacing: 2px; text-transform: uppercase; color: #33335a; min-width: 52px; padding-top: 3px;
+}
+.label-playfair { color: #cc00ff; }
+
+.result-value {
+    font-family: 'Share Tech Mono', monospace; font-size: 1.05rem;
+    word-break: break-all; line-height: 1.7; letter-spacing: 2px;
+}
+.value-muted  { color: #44445a; }
+.value-playfair { color: #cc00ff; text-shadow: 0 0 8px rgba(204,0,255,.35); }
+
+.result-actions { padding: .6rem 1.2rem; display: flex; align-items: center; gap: 10px; }
+.btn-copy {
+    font-family: 'Rajdhani', sans-serif; font-size: .8rem; font-weight: 700;
+    letter-spacing: 1px; background: rgba(204,0,255,.08); border: 1px solid rgba(204,0,255,.25);
+    border-radius: 6px; color: #cc00ff; padding: 4px 14px; cursor: pointer; transition: all .2s;
+}
+.btn-copy:hover { background: rgba(204,0,255,.18); }
+.copy-feedback { font-family: 'Rajdhani', sans-serif; font-size: .8rem; color: #39ff14; }
+
+/* ── PLAYFAIR 5x5 GRID ── */
+.playfair-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 4px;
+    background: #cc00ff;
+    padding: 4px;
+    border-radius: 8px;
+    box-shadow: 0 0 15px rgba(204,0,255,0.2);
+}
+.playfair-cell {
+    background: #0b0b1e;
+    color: #e0e0ff;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 1.25rem;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+.playfair-cell:hover {
+    background: rgba(204,0,255,0.2);
+    color: #cc00ff;
+    text-shadow: 0 0 8px #cc00ff;
+    cursor: default;
+}
+
+/* ── Steps Panel ── */
+.steps-panel {
+    background: #0b0b1e; border-radius: 12px; border: 1px solid rgba(255,255,255,.08); overflow: hidden;
+}
+.steps-panel-header {
+    display: flex; align-items: center; padding: .75rem 1.2rem;
+    font-family: 'Orbitron', sans-serif; font-size: .7rem; font-weight: 700;
+    letter-spacing: 2px; text-transform: uppercase; color: #8888bb;
+    background: rgba(255,255,255,.03); border-bottom: 1px solid rgba(255,255,255,.07);
+}
+.steps-count { font-family: 'Share Tech Mono', monospace; font-size: .7rem; color: #44447a; }
+
+/* Table Master */
+.table-steps { width: 100%; border-collapse: collapse; font-family: 'Rajdhani', sans-serif; font-size: .9rem; }
+.table-steps thead th {
+    padding: .6rem 1rem; font-family: 'Orbitron', sans-serif; font-size: .62rem; font-weight: 700;
+    letter-spacing: 2px; text-transform: uppercase; color: #44447a;
+    background: rgba(255,255,255,.03); border-bottom: 1px solid rgba(255,255,255,.08);
+    text-align: center; white-space: nowrap;
+}
+.table-steps tbody tr { border-bottom: 1px solid rgba(255,255,255,.04); transition: background .15s; }
+.table-steps tbody tr:hover { background: rgba(255,255,255,.03); }
+.table-steps td { padding: .7rem 1rem; text-align: center; vertical-align: middle; color: #aaaacc; }
+.col-idx { color: #33335a; font-family: 'Share Tech Mono', monospace; font-size: .8rem; }
+
+/* Block & Badge elements */
+.char-block {
+    display: inline-flex; align-items: center; justify-content: center;
+    height: 32px; padding: 0 12px; border-radius: 6px;
+    font-family: 'Share Tech Mono', monospace; font-size: 1rem; font-weight: 700;
+    letter-spacing: 4px;
+}
+.char-input  { background: rgba(255,255,255,.07); color: #ccccee; border: 1px solid rgba(255,255,255,.12); }
+.char-playfair { background: rgba(204,0,255,.1); color: #cc00ff; border: 1px solid rgba(204,0,255,.3); }
+
+.pos-text { font-family: 'Share Tech Mono', monospace; font-size: .75rem; text-align: left; display: inline-block; }
+.text-playfair-light { color: #e680ff; }
+
+.rule-badge {
+    font-family: 'Orbitron', sans-serif; font-size: .65rem; letter-spacing: 1px;
+    background: rgba(204,0,255,.08); color: #cc00ff;
+    border: 1px solid rgba(204,0,255,.2); border-radius: 6px; padding: 4px 10px;
+    text-transform: uppercase;
+}
+
+/* ── Empty State ── */
+.empty-state {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    min-height: 340px; background: #0b0b1e; border: 1px dashed rgba(204,0,255,.2);
+    border-radius: 12px; padding: 2.5rem; text-align: center;
+}
+.empty-icon { font-size: 2.5rem; color: rgba(204,0,255,.2); margin-bottom: 1rem; }
+.empty-title {
+    font-family: 'Orbitron', sans-serif; font-size: .9rem; letter-spacing: 2px;
+    color: #33335a; margin-bottom: .5rem; text-transform: uppercase;
+}
+.empty-desc {
+    font-family: 'Rajdhani', sans-serif; color: #44446a; font-size: .9rem;
+    line-height: 1.65; margin-bottom: 1.5rem;
+}
+.empty-example {
+    display: flex; align-items: center; flex-wrap: wrap; justify-content: center; gap: 4px;
+    font-family: 'Share Tech Mono', monospace; font-size: .85rem;
+    background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.08);
+    border-radius: 8px; padding: .6rem 1.2rem;
+}
+.ex-label { color: #cc00ff; font-size: .75rem; letter-spacing: 1px; }
+.ex-plain { color: #ccccee; }
+
+/* Light mode overrides */
+[data-bs-theme="light"] .config-panel,
+[data-bs-theme="light"] .result-panel,
+[data-bs-theme="light"] .steps-panel,
+[data-bs-theme="light"] .info-aside,
+[data-bs-theme="light"] .empty-state { background: #ffffff; border-color: rgba(0,0,0,.08); }
+[data-bs-theme="light"] .game-input  { background: #faf5ff; color: #1e0d2b; border-color: rgba(0,0,0,.12); }
+[data-bs-theme="light"] .page-desc { color: #555577; }
+[data-bs-theme="light"] .playfair-grid { background: rgba(204,0,255,0.15); box-shadow: none; border: 1px solid rgba(204,0,255,0.3); }
+[data-bs-theme="light"] .playfair-cell { background: #fff; color: #333; border: 1px solid #eee; }
+</style>
+
+<script>
+document.querySelectorAll('.mode-option input[type=radio]').forEach(radio => {
+    radio.addEventListener('change', () => {
+        document.querySelectorAll('.mode-option').forEach(el => {
+            el.classList.remove('mode-active-playfair');
+        });
+        if (radio.checked) radio.closest('.mode-option').classList.add('mode-active-playfair');
+    });
+});
+
+function copyResult(text) {
+    navigator.clipboard.writeText(text).then(() => {
+        const fb = document.getElementById('copy-feedback');
+        if (fb) { fb.textContent = '✓ Tersalin!'; setTimeout(() => fb.textContent = '', 2000); }
+    });
+}
+</script>
+{% endblock %}

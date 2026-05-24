@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+
+{% block title %}Riwayat Simulasi{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12 d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold text-dark"><i class="fa-solid fa-clock-rotate-left text-warning me-2"></i>Riwayat Simulasi</h2>
+            <p class="text-muted mb-0">10 aktivitas enkripsi/dekripsi terakhir Anda tersimpan di sini selama sesi aktif.</p>
+        </div>
+        {% if history %}
+        <a href="{{ url_for('clear_history') }}" class="btn btn-outline-danger">
+            <i class="fa-solid fa-trash-can me-2"></i>Hapus Riwayat
+        </a>
+        {% endif %}
+    </div>
+
+    <div class="col-12">
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-0">
+                {% if history %}
+                <div class="table-responsive">
+                    <table class="table table-hover table-striped mb-0 align-middle">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Algoritma</th>
+                                <th>Mode</th>
+                                <th>Parameter / Kunci</th>
+                                <th style="width: 30%;">Teks Input</th>
+                                <th style="width: 30%;">Hasil</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in history %}
+                            <tr>
+                                <td><span class="badge bg-primary">{{ item.cipher }}</span></td>
+                                <td>
+                                    {% if item.mode == 'encrypt' %}
+                                        <span class="badge bg-danger"><i class="fa-solid fa-lock me-1"></i> Enkripsi</span>
+                                    {% else %}
+                                        <span class="badge bg-success"><i class="fa-solid fa-lock-open me-1"></i> Dekripsi</span>
+                                    {% endif %}
+                                </td>
+                                <td class="small fw-bold text-muted">{{ item.key }}</td>
+                                <td class="small text-truncate" style="max-width: 250px;" title="{{ item.input }}">{{ item.input }}</td>
+                                <td class="small fw-bold text-dark text-truncate cipher-text" style="max-width: 250px;" title="{{ item.result }}">{{ item.result }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="p-5 text-center text-muted">
+                    <i class="fa-solid fa-folder-open fa-3x mb-3 text-secondary"></i>
+                    <h4>Belum ada riwayat simulasi.</h4>
+                    <p>Lakukan simulasi di salah satu algoritma untuk mulai merekam aktivitas.</p>
+                    <a href="{{ url_for('index') }}" class="btn btn-primary mt-2">Mulai Simulasi</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
