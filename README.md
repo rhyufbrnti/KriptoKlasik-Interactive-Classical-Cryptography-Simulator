@@ -291,7 +291,7 @@ Laporan lengkap tugas tersedia di repository ini dalam format `.docx`, mencakup:
   <p>
     <b>NIM:</b> 301230057<br/>
     <b>Program Studi:</b> Informatika<br/>
-    <b>Universitas:</b> Universitas Buana Perjuangan Karawang (UNIBBA)<br/>
+    <b>Universitas:</b> Universitas Bale Bandung (UNIBBA)<br/>
     <b>Mata Kuliah:</b> Kriptografi — Semester 6 (2025/2026)
   </p>
   <a href="https://github.com/rhyufbrnti">
